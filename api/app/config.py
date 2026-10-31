@@ -35,6 +35,23 @@ class Settings(BaseSettings):
     paytm_mock_key: str = "HisaabMockKey#01"
     paytm_mock_mid: str = "HISAAB00MOCK0000001"
 
+    # Reminder calls through a Sarvam voice agent on the merchant's Twilio connection.
+    # sarvam = real calls; mock = pretend the customer picked up and promised to pay; log = record only.
+    call_mode: Literal["sarvam", "mock", "log"] = "mock"
+    sarvam_agents_api_key: str = ""  # Voice Agents key (Settings -> API Key), not the STT/TTS key
+    sarvam_org_id: str = ""
+    sarvam_workspace_id: str = ""
+    sarvam_app_id: str = ""
+    sarvam_app_version: int = 1
+    sarvam_connection_id: str = ""
+    sarvam_agent_phone: str = ""  # the Twilio number the agent calls from, E.164
+    sarvam_call_language: str = ""  # e.g. Hindi; empty keeps the agent's default
+    sarvam_webhook_secret: str = ""  # falls back to CRON_SECRET
+    # Twilio trial accounts only reach verified numbers: every call goes here instead when set.
+    demo_customer_phone: str = ""
+    call_after_overdue_days: int = 2  # automatic call this many days after the due went overdue
+    call_window_ist: tuple[int, int] = (9, 20)  # automatic calls only between these IST hours
+
     public_api_base: str = "http://localhost:8000"
     public_web_base: str = "http://localhost:3000"
     web_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
@@ -57,6 +74,10 @@ class Settings(BaseSettings):
     def paytm_key(self) -> str:
         """Key used to sign requests and verify webhooks for the active mode."""
         return self.paytm_mock_key if self.mock_mode else self.paytm_merchant_key
+
+    @property
+    def call_webhook_secret(self) -> str:
+        return self.sarvam_webhook_secret or self.cron_secret
 
     @property
     def paytm_mid_active(self) -> str:

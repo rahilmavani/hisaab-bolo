@@ -4,6 +4,7 @@ import { Plus, RefreshCw, Send } from "lucide-react";
 import Link from "next/link";
 import { Fragment, useState } from "react";
 import { useMe } from "@/components/app-shell";
+import { callOutcomeText, callStatusLabel } from "@/components/call-status";
 import { InvoiceStatusText, isOverdue } from "@/components/invoice-status";
 import { NewInvoiceDialog } from "@/components/new-invoice-dialog";
 import { ErrorNote, SectionTitle, Skeleton } from "@/components/ui";
@@ -219,6 +220,13 @@ export default function CollectionsPage() {
                               ? `Last emailed ${istDate(inv.last_reminded_at)}`
                               : "Not emailed"}
                           </span>
+                          {inv.last_called_at ? (
+                            <span className="block text-xs text-faint">
+                              Called {istDate(inv.last_called_at)} ·{" "}
+                              {callOutcomeText(inv.last_call_outcome, inv.last_call_promised_date) ??
+                                callStatusLabel(inv.last_call_status).text}
+                            </span>
+                          ) : null}
                         </td>
                         <td className="hidden py-3 text-right @xl:table-cell">
                           {rowActions(inv, st)}

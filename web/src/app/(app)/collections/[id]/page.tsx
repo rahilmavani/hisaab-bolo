@@ -6,6 +6,7 @@ import {
   Check,
   Copy,
   ExternalLink,
+  Phone,
   RefreshCw,
   Send,
   XCircle,
@@ -13,6 +14,7 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { CallHistoryItem } from "@/components/call-status";
 import { invoiceStatusLabel } from "@/components/invoice-status";
 import { ErrorNote, Skeleton } from "@/components/ui";
 import { ApiError, api, useApi } from "@/lib/api";
@@ -118,7 +120,10 @@ export default function InvoicePage() {
     error,
     isLoading,
     mutate,
-  } = useApi<InvoiceDetail>(`/invoices/${id}`);
+  } = useApi<InvoiceDetail>(`/invoices/${id}`, {
+    // While a call rings, check for its outcome (realtime usually gets there first).
+    refreshInterval: (d) => (d?.last_call_status === "queued" ? 4000 : 0),
+  });
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<{
     text: string;
@@ -156,13 +161,17 @@ export default function InvoicePage() {
   );
   const open = inv.status === "sent" || inv.status === "overdue";
   const reminderTo = inv.email_to ?? inv.payer_email;
+  const calling = inv.last_call_status === "queued";
   // The first email of an invoice is the invoice itself (it failed, or was never sent).
   // Any email (invoice or overdue reminder) carries the same link and QR.
   const unsent =
-    open && Boolean(inv.email_to) && !inv.sent_at && !inv.reminders.length;
+    open &&
+    Boolean(inv.email_to) &&
+    !inv.sent_at &&
+    !inv.reminders.some((r) => r.channel === "email");
   const failure = inv.paytm_raw?.last_failure;
 
-  async function run(kind: "remind" | "check" | "cancel") {
+  async function run(kind: "remind" | "call" | "check" | "cancel") {
     setBusy(kind);
     setNote(null);
     try {
@@ -177,6 +186,18 @@ export default function InvoicePage() {
             : "";
         setNote({
           text: `${unsent ? "Invoice" : "Reminder"} emailed to ${r.intended_to}${copy}.`,
+        });
+      } else if (kind === "call") {
+        const r = await api<{ intended_to: string; delivered_to: string }>(
+          `/invoices/${id}/call`,
+          { method: "POST" },
+        );
+        const copy =
+          r.delivered_to !== r.intended_to
+            ? ` (demo call to ${r.delivered_to})`
+            : "";
+        setNote({
+          text: `Calling ${inv?.payer_name} on ${r.intended_to}${copy}. How it went shows up in the history when the call ends.`,
         });
       } else if (kind === "check") {
         const r = await api<{ status: string }>(`/invoices/${id}/check`, {
@@ -262,6 +283,18 @@ export default function InvoicePage() {
                 </button>
                 <button
                   className="btn btn-quiet"
+                  onClick={() => run("call")}
+                  disabled={busy !== null || !inv.payer_phone || calling}
+                >
+                  <Phone size={16} aria-hidden />{" "}
+                  {busy === "call"
+                    ? "Starting call…"
+                    : calling
+                      ? "Calling…"
+                      : "Call customer"}
+                </button>
+                <button
+                  className="btn btn-quiet"
                   onClick={() => run("check")}
                   disabled={busy !== null}
                 >
@@ -271,6 +304,16 @@ export default function InvoicePage() {
                 {!reminderTo ? (
                   <p className="text-sm text-muted">
                     Add an email to {inv.payer_name} to send reminders.
+                  </p>
+                ) : null}
+                {!inv.payer_phone ? (
+                  <p className="text-sm text-muted">
+                    Add a phone number to {inv.payer_name} to call them.
+                  </p>
+                ) : inv.call_remind ? (
+                  <p className="text-sm text-muted">
+                    If it stays unpaid after the overdue email, the agent calls{" "}
+                    {inv.payer_name} automatically.
                   </p>
                 ) : null}
               </div>
@@ -362,8 +405,11 @@ export default function InvoicePage() {
                   {istDate(inv.created_at)}, {istTime(inv.created_at)}
                 </span>
               </li>
-              {inv.reminders.map((r, i) => (
-                <li key={i}>
+              {inv.reminders.map((r, i) =>
+                r.channel === "call" ? (
+                  <CallHistoryItem key={r.id} r={r} />
+                ) : (
+                <li key={r.id ?? i}>
                   <span className="text-text">
                     {r.kind === "overdue"
                       ? "Overdue reminder emailed"
@@ -374,7 +420,8 @@ export default function InvoicePage() {
                     {r.to_email ? ` to ${r.to_email}` : ""}
                   </span>
                 </li>
-              ))}
+                ),
+              )}
               {failure && inv.status !== "paid" ? (
                 <li>
                   <span className="text-amber">Payment attempt failed</span>{" "}

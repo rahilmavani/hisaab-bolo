@@ -59,6 +59,13 @@ export function RecurringCard({
                 ? `Invoices go to ${s.email}; no automatic reminders.`
                 : "Tracking only: dues and missed payments, no emails. Edit to add an email."}
           </p>
+          {s.call_remind ? (
+            <p className="text-sm text-muted">
+              {payer.phone
+                ? `Missed dues get a reminder call to ${payer.phone}.`
+                : "Reminder calls are on, but there's no phone number to call. Edit to add one."}
+            </p>
+          ) : null}
           <div className="mt-1 flex flex-wrap gap-2">
             <button className="btn btn-quiet px-3 py-1.5 text-sm" onClick={() => setOpen(true)} disabled={busy}>
               Edit schedule

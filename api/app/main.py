@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 from .config import get_settings
 from .db import close_pool, open_pool
-from .routers import agent, invoices, jobs, ledger, mock_pay, recurring, webhooks
+from .routers import agent, invoices, jobs, ledger, mock_pay, recurring, sarvam, webhooks
 from .services.agent.runner import warm_up
 from .services.jobs import scheduler_loop
 
@@ -48,11 +48,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-for r in (ledger, invoices, recurring, webhooks, mock_pay, jobs, agent):
+for r in (ledger, invoices, recurring, webhooks, sarvam, mock_pay, jobs, agent):
     app.include_router(r.router)
 
 
 @app.get("/health")
 async def health():
     s = get_settings()
-    return {"ok": True, "paytm_mode": s.paytm_mode, "email_mode": s.email_mode}
+    return {"ok": True, "paytm_mode": s.paytm_mode, "email_mode": s.email_mode, "call_mode": s.call_mode}

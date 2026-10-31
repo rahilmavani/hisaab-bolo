@@ -18,7 +18,7 @@ from psycopg.errors import UniqueViolation
 from ..db import app_today, fetch_all, fetch_one
 from ..money import format_inr
 from . import invoices as inv_svc
-from .payers import add_identifier, conflict_message, identifier_owner
+from .payers import PayerError, add_identifier, conflict_message, identifier_owner, normalise_phone, update_payer
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ LEAD_DAYS = 3  # create (and email) the invoice this many days before the due da
 def _reminded_while_overdue(grace_sql: str = "i.grace_days") -> str:
     """SQL: the due already got an overdue reminder once it was actually overdue (due date + grace
     passed). A manual nudge during the grace period doesn't stand in for the automatic reminder."""
-    return ("exists (select 1 from reminders r where r.invoice_id = i.id and r.kind = 'overdue' "
+    return ("exists (select 1 from reminders r where r.invoice_id = i.id and r.kind = 'overdue' and r.channel = 'email' "
             f"and r.sent_at >= (i.due_date + {grace_sql} + 1)::timestamp at time zone 'Asia/Kolkata')")
 MAX_CATCH_UP = 12  # dues created per schedule per tick after a long clock jump
 
@@ -58,6 +58,8 @@ async def set_recurring(
     grace_days: int = 3,
     email: str | None = None,
     auto_remind: bool = True,
+    call_remind: bool = False,
+    phone: str | None = None,
 ) -> dict:
     """Mark a customer recurring, or edit their active schedule in place.
 
@@ -75,6 +77,14 @@ async def set_recurring(
     email = (email or "").strip().lower() or None
     if email and (owner := await identifier_owner(conn, merchant_id, "email", email, payer_id)):
         raise RecurringError(409, conflict_message(email, owner))
+    try:
+        phone = normalise_phone(phone) if phone and phone.strip() else None
+    except PayerError as e:
+        raise RecurringError(e.status, str(e)) from e
+    if phone and phone != payer["phone"] and (owner := await identifier_owner(conn, merchant_id, "phone", phone, payer_id)):
+        raise RecurringError(409, conflict_message(phone, owner))
+    if call_remind and not (phone or payer["phone"]):
+        raise RecurringError(422, f"Add a phone number for {payer['display_name']} to call them about missed dues")
     # One transaction: a refused request (e.g. a past first due) leaves the customer untouched.
     async with conn.transaction():
         existing = await fetch_one(
@@ -89,6 +99,8 @@ async def set_recurring(
             anchor = next_date = anchor_date or today
             if anchor < today:
                 raise RecurringError(422, "The first due date can't be in the past")
+        if phone and phone != payer["phone"]:
+            await update_payer(conn, merchant_id, payer_id, {"phone": phone})
         if email:
             await conn.execute("update payers set email = coalesce(email, %s) where id = %s", (email, payer_id))
             await add_identifier(conn, merchant_id, payer_id, "email", email)
@@ -99,21 +111,21 @@ async def set_recurring(
                 """
                 update recurring_schedules
                    set amount_paise = %s, cadence = %s, anchor_date = %s, next_due_date = %s, grace_days = %s,
-                       email = %s, auto_remind = %s
+                       email = %s, auto_remind = %s, call_remind = %s
                  where id = %s returning *
                 """,
-                (amount_paise, cadence, anchor, next_date, grace_days, email, remind, existing["id"]),
+                (amount_paise, cadence, anchor, next_date, grace_days, email, remind, call_remind, existing["id"]),
             )
         else:
             schedule = await fetch_one(
                 conn,
                 """
                 insert into recurring_schedules (merchant_id, payer_id, amount_paise, cadence, anchor_date,
-                                                 next_due_date, grace_days, email, auto_remind, active)
-                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, true) returning *
+                                                 next_due_date, grace_days, email, auto_remind, call_remind, active)
+                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, true) returning *
                 """,
                 (merchant_id, payer_id, amount_paise, cadence, anchor, anchor, grace_days, email,
-                 auto_remind and bool(email)),
+                 auto_remind and bool(email), call_remind),
             )
         assert schedule
         await _adopt_open_dues(conn, payer_id, schedule)
@@ -133,6 +145,7 @@ async def _adopt_open_dues(conn: AsyncConnection, payer_id: UUID, schedule: dict
            set recurring_id = %(sid)s,
                email_to = %(email)s,
                grace_days = %(grace)s,
+               call_remind = %(call)s,
                status = case when i.status = 'overdue' and i.due_date + %(grace)s >= app_today()
                              then 'sent' else i.status end,
                overdue_reminder_pending = i.status = 'overdue' and i.due_date + %(grace)s < app_today() and %(remind)s
@@ -140,7 +153,7 @@ async def _adopt_open_dues(conn: AsyncConnection, payer_id: UUID, schedule: dict
          where i.payer_id = %(pid)s and i.recurring_id is not null and i.status in ('sent', 'overdue')
         """,
         {"sid": schedule["id"], "email": schedule["email"], "grace": schedule["grace_days"],
-         "remind": schedule["auto_remind"], "pid": payer_id},
+         "remind": schedule["auto_remind"], "call": schedule["call_remind"], "pid": payer_id},
     )
 
 
@@ -195,7 +208,7 @@ async def create_due_invoices(
                         line_items=[{"name": f"{label} payment, due {due.day} {due.strftime('%b')}", "qty": 1,
                                      "unit_price_paise": s["amount_paise"]}],
                         email=s["email"], send=emailed, recurring_id=s["id"], grace_days=s["grace_days"],
-                        allow_past_due=True,
+                        allow_past_due=True, call_remind=s["call_remind"],
                     )
                 except UniqueViolation as e:
                     if e.diag.constraint_name != "invoices_one_per_recurring_due":
@@ -270,7 +283,7 @@ async def send_unsent_due_emails(conn: AsyncConnection, payer_id: UUID | None = 
           join recurring_schedules s on s.id = i.recurring_id
          where i.status = 'sent' and i.sent_at is null and coalesce(i.email_to, '') <> ''
            and i.due_date + i.grace_days >= app_today() and s.active and s.email is not null
-           and not exists (select 1 from reminders r where r.invoice_id = i.id)
+           and not exists (select 1 from reminders r where r.invoice_id = i.id and r.channel = 'email')
            and (%(pid)s::uuid is null or i.payer_id = %(pid)s)
          order by i.due_date
         """,

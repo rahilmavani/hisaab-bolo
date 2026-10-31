@@ -75,6 +75,8 @@ export function RecurringDialog({
   const [email, setEmail] = useState(
     existing ? (existing.email ?? "") : (payer.email ?? ""),
   );
+  const [callRemind, setCallRemind] = useState(existing?.call_remind ?? false);
+  const [phone, setPhone] = useState(payer.phone ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -91,6 +93,8 @@ export function RecurringDialog({
       return setError("Enter the amount they pay each time (at least ₹1).");
     if (!Number.isInteger(graceDays) || graceDays < 0 || graceDays > 60)
       return setError("Grace should be 0 to 60 days.");
+    if (callRemind && !phone.trim())
+      return setError("Add their phone number so the agent can call them.");
     setBusy(true);
     setError(null);
     try {
@@ -102,6 +106,8 @@ export function RecurringDialog({
           anchor_date: first,
           grace_days: graceDays,
           email: email.trim() || null,
+          call_remind: callRemind,
+          phone: callRemind ? phone.trim() : null,
         }),
       });
       const due = r.dues_created[0];
@@ -224,6 +230,34 @@ export function RecurringDialog({
             : "Without an email, Hisaab tracks each due and flags missed payments; nothing is sent."}
           {usual ? ` They usually pay ${inr(usual)} at a time.` : ""}
         </p>
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4 accent-blue"
+            checked={callRemind}
+            onChange={(e) => setCallRemind(e.target.checked)}
+          />
+          <span className="text-sm">
+            <span className="block text-text">Call them if a due stays unpaid</span>
+            <span className="text-muted">
+              {email.trim()
+                ? "Our voice agent rings them 2 days after the overdue email, and emails the payment link once they pick up."
+                : "Our voice agent rings them 2 days after a due is missed."}
+            </span>
+          </span>
+        </label>
+        {callRemind ? (
+          <label className="block space-y-1.5">
+            <span className="text-sm text-muted">Phone to call</span>
+            <input
+              className="field"
+              type="tel"
+              placeholder="98765 43210"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </label>
+        ) : null}
         {error ? (
           <p role="alert" className="text-sm text-rose">
             {error}

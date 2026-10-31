@@ -99,6 +99,7 @@ export type PayerProfile = Payer & {
     next_due_date: string;
     grace_days: number;
     auto_remind: boolean;
+    call_remind: boolean;
     active: boolean;
     email: string | null;
   } | null;
@@ -190,6 +191,11 @@ export type Invoice = {
   created_at: string;
   last_reminded_at: string | null;
   reminder_count: number;
+  call_remind: boolean;
+  last_called_at: string | null;
+  last_call_status: CallStatus | null;
+  last_call_outcome: CallOutcome | null;
+  last_call_promised_date: string | null;
   paytm_raw?: {
     last_failure?: { RESPMSG?: string; TXNDATE?: string; STATUS?: string };
   };
@@ -198,11 +204,7 @@ export type Invoice = {
 
 export type InvoiceDetail = Invoice & {
   merchant_name: string;
-  reminders: {
-    kind: "invoice" | "overdue";
-    to_email: string | null;
-    sent_at: string;
-  }[];
+  reminders: Reminder[];
   payment: {
     id: string;
     amount_paise: number;
@@ -211,6 +213,24 @@ export type InvoiceDetail = Invoice & {
     payment_mode: string | null;
     source: string;
   } | null;
+};
+
+export type CallStatus = "queued" | "connected" | "no_answer" | "busy" | "failed";
+export type CallOutcome = "will_pay" | "already_paid" | "dispute" | "call_later" | "no_commitment";
+
+export type Reminder = {
+  id: string;
+  kind: "invoice" | "overdue";
+  channel: "email" | "call";
+  to_email: string | null;
+  to_phone: string | null;
+  sent_at: string;
+  call_status: CallStatus | null;
+  call_duration_s: number | null;
+  call_outcome: CallOutcome | null;
+  call_promised_date: string | null;
+  call_transcript: { role: "agent" | "user"; en_text: string }[] | null;
+  call_failure: string | null;
 };
 
 export type InvoiceList = {

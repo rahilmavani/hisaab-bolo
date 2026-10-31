@@ -3,6 +3,8 @@ import os
 # Tests never send real email and always use the mock gateway.
 os.environ["EMAIL_MODE"] = "log"
 os.environ["PAYTM_MODE"] = "mock"
+os.environ["CALL_MODE"] = "log"  # reminder calls are recorded, never placed
+os.environ["DEMO_CUSTOMER_PHONE"] = ""
 os.environ["RUN_SCHEDULER"] = "false"
 os.environ["AGENT_WARMUP"] = "false"
 

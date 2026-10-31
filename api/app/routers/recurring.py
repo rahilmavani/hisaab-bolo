@@ -26,6 +26,8 @@ class RecurringBody(BaseModel):
     grace_days: int = Field(3, ge=0, le=60)
     email: EmailStr | None = None
     auto_remind: bool = True
+    call_remind: bool = False
+    phone: str | None = Field(None, max_length=20, pattern=r"^[+\d\s().-]*$")
 
 
 @router.post("/payers/{payer_id}/recurring", status_code=201)

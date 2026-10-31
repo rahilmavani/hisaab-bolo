@@ -110,7 +110,8 @@ export function LiveUpdates({ merchantId }: { merchantId: string }) {
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          // INSERT: a reminder went out; UPDATE: a reminder call ended and its outcome arrived.
+          event: "*",
           schema: "public",
           table: "reminders",
           filter: `merchant_id=eq.${merchantId}`,

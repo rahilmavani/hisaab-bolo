@@ -19,7 +19,7 @@ from ..db import app_now, app_today, fetch_all, fetch_one
 from ..money import IST
 from .email import EmailError, render_payment_email, send_email
 from .paytm import DuplicateOrderError, LinkRequest, PaytmError, QrRequest, get_paytm
-from .payers import add_identifier, conflict_message, identifier_owner
+from .payers import PayerError, add_identifier, conflict_message, identifier_owner, normalise_phone, update_payer
 from .storage import upload_qr_png
 
 log = logging.getLogger(__name__)
@@ -36,9 +36,13 @@ class InvoiceError(Exception):
 INVOICE_SELECT = """
     select i.*, p.display_name as payer_name, p.email as payer_email, p.phone as payer_phone,
            (i.due_date - app_today()) as due_in_days,
-           (select max(r.sent_at) from reminders r where r.invoice_id = i.id) as last_reminded_at,
-           (select count(*) from reminders r where r.invoice_id = i.id)::int as reminder_count
+           (select max(r.sent_at) from reminders r where r.invoice_id = i.id and r.channel = 'email') as last_reminded_at,
+           (select count(*) from reminders r where r.invoice_id = i.id)::int as reminder_count,
+           lc.sent_at as last_called_at, lc.call_status as last_call_status, lc.call_outcome as last_call_outcome,
+           lc.call_promised_date as last_call_promised_date
       from invoices i join payers p on p.id = i.payer_id
+      left join lateral (select r.sent_at, r.call_status, r.call_outcome, r.call_promised_date from reminders r
+                          where r.invoice_id = i.id and r.channel = 'call' order by r.sent_at desc limit 1) lc on true
 """
 
 
@@ -101,6 +105,8 @@ async def create_invoice(
     recurring_id: UUID | None = None,
     grace_days: int = 0,
     allow_past_due: bool = False,
+    call_remind: bool = False,
+    phone: str | None = None,
 ) -> dict:
     items, total = normalise_items(line_items or [], amount_paise)
     today = await app_today(conn)
@@ -120,9 +126,21 @@ async def create_invoice(
     if email and (owner := await identifier_owner(conn, merchant_id, "email", email, payer_id)):
         raise InvoiceError(409, conflict_message(email, owner))
     gstin = (payer_gstin or payer["gstin"] or None) if gst_taxable else None
+    try:
+        phone = normalise_phone(phone) if phone and phone.strip() else None
+    except PayerError as e:
+        raise InvoiceError(e.status, str(e)) from e
+    if phone and phone != payer["phone"] and (owner := await identifier_owner(conn, merchant_id, "phone", phone, payer_id)):
+        raise InvoiceError(409, conflict_message(phone, owner))
+    # A recurring due follows its schedule (checked when it was set up); the call step skips no-phone ones.
+    if call_remind and not recurring_id and not (phone or payer["phone"]):
+        raise InvoiceError(422, f"Add a phone number for {payer['display_name']} to call them about this invoice")
 
     # All or nothing up to the payment link: if Paytm fails, no invoice (or used-up number) is left.
     async with conn.transaction():
+        if phone and phone != payer["phone"]:  # the number typed here becomes the customer's number
+            await update_payer(conn, merchant_id, payer_id, {"phone": phone})
+            payer = {**payer, "phone": phone}
         if email and not payer["email"]:
             await conn.execute("update payers set email = %s where id = %s", (email, payer_id))
         if email:
@@ -135,12 +153,13 @@ async def create_invoice(
             conn,
             """
             insert into invoices (merchant_id, number, payer_id, amount_paise, line_items, gst_taxable, payer_gstin,
-                                  due_date, grace_days, status, email_to, paytm_order_id, recurring_id, created_at)
-            values (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'draft', %s, %s, %s, app_now())
+                                  due_date, grace_days, status, email_to, paytm_order_id, recurring_id, call_remind,
+                                  created_at)
+            values (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'draft', %s, %s, %s, %s, app_now())
             returning *
             """,
             (merchant_id, number, payer_id, total, Jsonb(items), gst_taxable, gstin, due_date, grace_days,
-             email, order_id, recurring_id),
+             email, order_id, recurring_id, call_remind),
         )
         assert inv
         await attach_payment_artifacts(conn, inv, merchant["name"], payer)

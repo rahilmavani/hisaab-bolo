@@ -204,7 +204,7 @@ async def payer_profile(conn: AsyncConnection, merchant_id: UUID, payer_id: UUID
     profile["recurring_schedule"] = await fetch_one(
         conn,
         """
-        select id, amount_paise, cadence, anchor_date, next_due_date, grace_days, auto_remind, active, email
+        select id, amount_paise, cadence, anchor_date, next_due_date, grace_days, auto_remind, call_remind, active, email
           from recurring_schedules where payer_id = %s and active
         """,
         (payer_id,),

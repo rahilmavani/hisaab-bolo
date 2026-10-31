@@ -7,6 +7,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 from ..auth import Conn, CurrentMerchant
 from ..db import fetch_all, fetch_one
+from ..services import calls
 from ..services import invoices as svc
 from ..services.payments import check_payment
 
@@ -34,7 +35,10 @@ async def get_invoice(invoice_id: UUID, merchant: CurrentMerchant, conn: Conn):
     if inv is None:
         raise HTTPException(404, "Invoice not found")
     inv["reminders"] = await fetch_all(
-        conn, "select kind, to_email, sent_at from reminders where invoice_id = %s order by sent_at", (invoice_id,)
+        conn,
+        "select id, kind, channel, to_email, to_phone, sent_at, call_status, call_duration_s, call_outcome, "
+        "call_promised_date, call_transcript, call_failure from reminders where invoice_id = %s order by sent_at",
+        (invoice_id,),
     )
     inv["payment"] = await fetch_one(
         conn,
@@ -61,6 +65,8 @@ class InvoiceCreate(BaseModel):
     payer_gstin: str | None = Field(None, pattern=r"^[0-9]{2}[A-Z0-9]{13}$")
     email: EmailStr | None = None
     send_email: bool = True
+    call_remind: bool = False
+    phone: str | None = Field(None, max_length=20, pattern=r"^[+\d\s().-]*$")
 
 
 @router.post("", status_code=201)
@@ -71,6 +77,7 @@ async def create_invoice(body: InvoiceCreate, merchant: CurrentMerchant, conn: C
             payer_id=body.payer_id, due_date=body.due_date,
             line_items=[i.model_dump() for i in body.line_items], amount_paise=body.amount_paise,
             gst_taxable=body.gst_taxable, payer_gstin=body.payer_gstin, email=body.email, send=body.send_email,
+            call_remind=body.call_remind, phone=body.phone,
         )
     except svc.InvoiceError as e:
         _raise(e)
@@ -82,6 +89,16 @@ async def remind(invoice_id: UUID, merchant: CurrentMerchant, conn: Conn):
         return await svc.remind(conn, merchant.id, invoice_id)
     except svc.InvoiceError as e:
         _raise(e)
+
+
+@router.post("/{invoice_id}/call")
+async def call(invoice_id: UUID, merchant: CurrentMerchant, conn: Conn):
+    """Have the voice agent ring the customer about this invoice now. The outcome arrives later
+    through Sarvam's webhook (and live on the invoice page)."""
+    try:
+        return await calls.call_invoice(conn, merchant.id, invoice_id)
+    except calls.CallError as e:
+        raise HTTPException(e.status, str(e)) from e
 
 
 @router.post("/{invoice_id}/check")

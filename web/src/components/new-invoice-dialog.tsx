@@ -28,7 +28,7 @@ export function NewInvoiceDialog({
   onClose: () => void;
   /** App-clock date (YYYY-MM-DD), so due dates follow the demo clock. */
   today: string;
-  presetPayer?: Pick<Payer, "id" | "display_name" | "email" | "gstin"> | null;
+  presetPayer?: (Pick<Payer, "id" | "display_name" | "email" | "gstin"> & { phone?: string | null }) | null;
 }) {
   const router = useRouter();
   const [payer, setPayer] = useState(presetPayer ?? null);
@@ -42,6 +42,8 @@ export function NewInvoiceDialog({
   const [gst, setGst] = useState(Boolean(presetPayer?.gstin));
   const [gstin, setGstin] = useState(presetPayer?.gstin ?? "");
   const [email, setEmail] = useState(presetPayer?.email ?? "");
+  const [callRemind, setCallRemind] = useState(false);
+  const [phone, setPhone] = useState(presetPayer?.phone ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -55,6 +57,7 @@ export function NewInvoiceDialog({
   function pick(p: Payer) {
     setPayer(p);
     setEmail(p.email ?? "");
+    setPhone(p.phone ?? "");
     setGstin(p.gstin ?? "");
     setGst(Boolean(p.gstin));
   }
@@ -65,6 +68,7 @@ export function NewInvoiceDialog({
     if (items.some((i) => !i.name || i.qty <= 0 || i.unit_price_paise <= 0))
       return setError("Every line needs a description, a quantity and a price.");
     if (total < 100) return setError("The total must be at least ₹1.");
+    if (callRemind && !phone.trim()) return setError("Add their phone number so the agent can call them.");
     setBusy(true);
     setError(null);
     try {
@@ -78,6 +82,8 @@ export function NewInvoiceDialog({
           payer_gstin: gst && gstin.trim() ? gstin.trim().toUpperCase() : null,
           email: email.trim() || null,
           send_email: Boolean(email.trim()),
+          call_remind: callRemind,
+          phone: callRemind ? phone.trim() : null,
         }),
       });
       onClose();
@@ -214,6 +220,25 @@ export function NewInvoiceDialog({
               maxLength={15}
               value={gstin}
               onChange={(e) => setGstin(e.target.value.toUpperCase())}
+            />
+          ) : null}
+          <label className="flex items-center gap-2.5">
+            <input
+              type="checkbox"
+              checked={callRemind}
+              onChange={(e) => setCallRemind(e.target.checked)}
+              className="h-4 w-4 accent-blue"
+            />
+            <span>Call them if it stays unpaid after it&apos;s overdue</span>
+          </label>
+          {callRemind ? (
+            <input
+              aria-label="Phone to call"
+              className="field"
+              type="tel"
+              placeholder="Phone to call, e.g. 98765 43210"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
             />
           ) : null}
         </div>

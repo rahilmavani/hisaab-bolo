@@ -6,7 +6,7 @@ import logging
 from psycopg import AsyncConnection
 
 from ..db import app_now, connection, fetch_all, fetch_one
-from . import ledger, recurring
+from . import calls, ledger, recurring
 from .descriptions import describe_pending
 from .payments import poll_open_invoices
 
@@ -25,6 +25,7 @@ async def tick(conn: AsyncConnection) -> dict:
             ("dues_created", recurring.create_due_invoices(conn)),
             ("due_emails", recurring.send_unsent_due_emails(conn)),
             ("overdue", recurring.mark_overdue_and_remind(conn)),
+            ("calls", calls.call_overdue(conn)),
             ("paid_by_status_poll", poll_open_invoices(conn)),
             ("descriptions_written", describe_pending(conn)),
             ("alerts", alerts(conn)),
