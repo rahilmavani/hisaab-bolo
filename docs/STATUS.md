@@ -1,17 +1,19 @@
 # Hisaab Bolo: build status
 
-_Last updated 31 Oct 2026. The demo-run table is filled in after the final end-to-end run._
+_Last updated 31 Oct 2026, after the final end-to-end demo run in Chrome. Milestones M1–M6 are on `mvp`._
 
 Hisaab Bolo runs end to end on a local stack: Next.js 16 web app, FastAPI, and a local Supabase (Postgres, Auth, Storage, Realtime). Claude (Haiku 5.5, with Sonnet 5.5 as the retry model), Sarvam (speech to text and text to speech) and Resend are called for real. Paytm runs in `PAYTM_MODE=mock`: a local checkout page sends checksum-signed webhooks through the same webhook route real Paytm will use.
 
 ## The four demo moments
 
-| Moment | Status |
+All four ran end to end in Chrome on 31 Oct, with real Claude, Sarvam and Resend. Screenshots are in `evidence/m7/`.
+
+| Moment | Result |
 |---|---|
-| Voice query ("Ram ne pichhle 4 mahine mein kitna diya?") | _pending final run_ |
-| Invoice → paid (email with Paytm link + QR, flips to Paid live) | _pending final run_ |
-| Per-payer ledger dashboard | _pending final run_ |
-| Recurring + auto-reminder | _pending final run_ |
+| Voice query ("Ram ne pichhle 4 mahine mein kitna diya?") | ✅ Typed in Chrome: "Ram ne pichhle 4 mahine (30 Jun se aaj tak) mein ₹12,100 diye, kul 121 payments", with Ram's card, and the spoken reply played. Spoken through the mic path (a recorded Hindi question, Sarvam speech to text): same answer, read aloud. Correct 11 of 11 times in the last tester round (text and voice; Hinglish, Devanagari, English). |
+| Invoice → paid (email with Paytm link + QR, flips to Paid live) | ✅ INV-0415 (₹2,450, Kavita Verma) was created and its email delivered (Resend status "delivered"). Paying on the checkout page in a second tab flipped the invoice to "Paid · auto-matched" live, with a PAID stamp and one "INV-0415 paid" toast. |
+| Per-payer ledger dashboard | ✅ Searching "Ram" opens his profile: Regular badge, ₹100 daily around 8:30 AM, ₹12,100 across 121 payments, every payment labelled. |
+| Recurring + auto-reminder | ✅ Bhavesh Jain was marked weekly (₹2,085, 3 days' grace, email): INV-0416 was emailed straight away. After +7 days on the demo clock, INV-0416 went overdue and got one reminder, and INV-0417 was emailed. Resend shows all 5 demo emails delivered. Resetting the clock reopened the dues. |
 
 ## What works
 
@@ -19,15 +21,19 @@ Hisaab Bolo runs end to end on a local stack: Next.js 16 web app, FastAPI, and a
 - **Invoices:** create, email, remind and cancel. Each invoice gets a Paytm payment link and a QR image, and the email carries both. Paying an invoice flips it to "Paid · auto-matched" live, on every open screen, with no refresh. Webhooks are checksum-verified and idempotent, and a status poll catches payments whose webhook never arrived.
 - **Recurring:** a customer can be marked weekly or monthly, with or without an email, and the schedule can be edited or stopped. Each due becomes an invoice 3 days ahead; a missed due becomes overdue after the grace days and gets exactly one reminder, which is retried if the send fails. Customers with a steady pattern get a suggestion to go recurring.
 - **Background jobs:** run every 5 minutes, in-process or from the cron container. A demo clock in the sidebar (mock mode only) jumps +1 or +7 days, runs the jobs at the new time, and resets to where the seed put the clock.
-- **Ask Hisaab (text and voice):** questions in Hindi, English or Hinglish, typed or spoken by holding the mic. Answers come with charts, tables or customer cards, and voice answers are read aloud. Actions such as "send Ram an invoice for ₹500" are confirmed before they run. A guard rejects any number in an answer that the tools didn't return.
+- **Ask Hisaab (text and voice):**
+  - Questions in Hindi, English or Hinglish, typed or spoken by holding the mic (or the Space bar). Answers come with charts, tables or customer cards, and voice answers are read aloud in the question's language.
+  - Actions such as "send Ram an invoice for ₹500" only run after a Confirm tap.
+  - **Number guard:** every number in an answer must come from the data the agent looked up; a number in the question counts only as a time ("4 mahine", "30 din"). Otherwise the agent retries on Sonnet, then shows the data without speech.
+  - **Names:** a lookalike name ("Ramesh" when only Ram exists) gets "which customer?" choices, never someone else's money.
 - **AI descriptions:** each new payment gets a label of up to 8 words and a category. Edits the merchant makes are never overwritten.
-- **Tests:** about 620 API tests (pytest) and 85 browser tests (Playwright on Chrome), including tests written by independent tester agents after each milestone. Screenshots are saved in `evidence/`.
+- **Tests:** 859 API tests (pytest) and 135+ browser tests (Playwright on Chrome), many written by independent tester agents. M4 and M5 went through 6 tester rounds, M6 through 4, each fixed until the last found no blockers. Screenshots are in `evidence/m1`–`m7`.
 
 ## What's mocked or redirected
 
 - **Paytm:** `PAYTM_MODE=mock`. Payment links, QR codes, checkout and webhooks come from a local mock that follows Paytm's documented request, response and checksum formats. The real client (`api/app/services/paytm/real.py`) is written but has never talked to Paytm.
 - **Email:** every email goes to `DEMO_CUSTOMER_EMAIL` (your inbox), whoever the customer is, and is sent from `onboarding@resend.dev`. The intended recipient appears in the email. Tests use `EMAIL_MODE=log`, which sends nothing.
-- **Data:** customers and payments are generated by `api/app/seed.py`. Re-seeding wipes and rebuilds the demo merchant.
+- **Data:** customers and payments are generated by `api/app/seed.py`. Re-seeding wipes and rebuilds the demo merchant. Before 10:00 IST it pins the demo clock to 12:30, so the day reads like a business day; later in the day it uses real time.
 - **Time:** the demo clock overrides "now" for the whole app, for every merchant. It only exists in mock mode.
 
 ## What's left
@@ -43,8 +49,9 @@ Hisaab Bolo runs end to end on a local stack: Next.js 16 web app, FastAPI, and a
 5. **Product gaps:**
    - Only one merchant per login.
    - Alerts show on screen only (no push or WhatsApp).
-   - Voice answers take 5–7 seconds.
+   - Voice answers appear 5–6 seconds after you let go of the mic, and the spoken reply is ready after 7–9 seconds; occasionally longer.
    - No rate limiting or production monitoring.
+6. **Light "ledger paper" restyle:** another session started it on 31 Oct. It is in the working copy and not committed, and it hasn't been through a test round yet; the demo screenshots in `evidence/m7` show it.
 
 ## Setup guide (short)
 
