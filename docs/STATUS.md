@@ -26,6 +26,7 @@ All four ran end to end in Chrome on 31 Oct, with real Claude, Sarvam and Resend
   - Actions such as "send Ram an invoice for ₹500" only run after a Confirm tap.
   - **Number guard:** every number in an answer must come from the data the agent looked up; a number in the question counts only as a time ("4 mahine", "30 din"). Otherwise the agent retries on Sonnet, then shows the data without speech.
   - **Names:** a lookalike name ("Ramesh" when only Ram exists) gets "which customer?" choices, never someone else's money.
+- **Reminder calls:** a Call button on unpaid invoices (and in Collections, or "Sharma ko call karo" in Ask Hisaab) has a Sarvam voice agent ring the customer over Twilio. If they want to pay now, the agent emails the Paytm link and QR during the call. The invoice shows the outcome, the agent's summary, whether the link went out and the transcript, and the dashboard lists "Promised on calls". Tested with a real call on 31 Oct. Setup: `docs/CALLS.md`.
 - **AI descriptions:** each new payment gets a label of up to 8 words and a category. Edits the merchant makes are never overwritten.
 - **Tests:** 859 API tests (pytest) and 135+ browser tests (Playwright on Chrome), many written by independent tester agents. M4 and M5 went through 6 tester rounds, M6 through 4, each fixed until the last found no blockers. Screenshots are in `evidence/m1`–`m7`.
 
@@ -80,6 +81,10 @@ Open http://localhost:3000 and sign in with `DEMO_MERCHANT_EMAIL` / `DEMO_MERCHA
 2. Paytm must be able to reach the API: run a tunnel such as `cloudflared tunnel --url http://localhost:8000` and set `PUBLIC_API_BASE` to the https URL it prints.
 3. In the Paytm dashboard, set the Payment Status webhook to `<PUBLIC_API_BASE>/webhooks/paytm/payment`. Payment links register `/webhooks/paytm/link` on their own.
 4. Run `cd api && uv run pytest -m staging` to check the contract, then create and pay a ₹1 invoice. The demo clock is hidden outside mock mode.
+
+### Reminder calls
+
+`CALL_MODE=mock` (the default) fakes the whole call, so nothing is needed for UI work. For real calls (Sarvam agent, Twilio verified numbers, ngrok for local testing) follow `docs/CALLS.md`.
 
 ### Email
 
