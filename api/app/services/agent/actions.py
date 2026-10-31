@@ -7,6 +7,7 @@ from psycopg import AsyncConnection
 from psycopg.types.json import Jsonb
 
 from ...db import app_now, fetch_one
+from .. import calls
 from .. import invoices as inv_svc
 from ..recurring import RecurringError, create_due_invoices, set_recurring
 
@@ -44,13 +45,20 @@ async def confirm(conn: AsyncConnection, merchant_id: UUID, token: str) -> dict:
             sent = await inv_svc.remind(conn, merchant_id, UUID(a["invoice_id"]))
             inv = await inv_svc.get_invoice(conn, merchant_id, UUID(a["invoice_id"]))
             result = {"kind": "reminder", "invoice": inv, "message": f"Reminder emailed to {sent['intended_to']}"}
+        elif action["tool"] == "call_customer":
+            placed = await calls.call_invoice(conn, merchant_id, UUID(a["invoice_id"]))
+            inv = await inv_svc.get_invoice(conn, merchant_id, UUID(a["invoice_id"]))
+            copy = f" (demo call to {placed['delivered_to']})" if placed["delivered_to"] != placed["intended_to"] else ""
+            result = {"kind": "call", "invoice": inv,
+                      "message": f"Calling {inv['payer_name']} on {placed['intended_to']}{copy}. "
+                                 "How it went shows up on the invoice when the call ends."}
         else:
             schedule = await set_recurring(conn, merchant_id, UUID(a["payer_id"]), cadence=a["cadence"],
                                            amount_paise=a["amount_paise"], email=a.get("email"))
             dues = await create_due_invoices(conn, schedule["id"])
             result = {"kind": "recurring", "schedule": schedule, "dues_created": dues,
                       "message": "Marked recurring" + (" (tracking only, no email)" if schedule["tracking_only"] else "")}
-    except (inv_svc.InvoiceError, RecurringError) as e:
+    except (inv_svc.InvoiceError, RecurringError, calls.CallError) as e:
         # Let the merchant retry: the action was not carried out.
         await conn.execute("update pending_actions set confirmed_at = null where token = %s", (token,))
         raise ActionError(e.status, str(e)) from e

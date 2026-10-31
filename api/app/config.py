@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     sarvam_webhook_secret: str = ""  # falls back to CRON_SECRET
     # Twilio trial accounts only reach verified numbers: every call goes here instead when set.
     demo_customer_phone: str = ""
+    # Seeded customers given real phones for the call demo: "Sharma Traders=+91..., Priya Caterers=+91..."
+    demo_call_phones: str = ""
     call_after_overdue_days: int = 2  # automatic call this many days after the due went overdue
     call_window_ist: tuple[int, int] = (9, 20)  # automatic calls only between these IST hours
 

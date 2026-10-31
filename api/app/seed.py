@@ -30,6 +30,7 @@ from psycopg.types.json import Jsonb
 
 from .config import get_settings
 from .money import IST
+from .phones import india_digits
 from .services.qr import qr_png_b64, upi_uri
 
 MERCHANT_NAME = "Gupta Kirana Store"
@@ -411,11 +412,24 @@ def build_invoices(cast: list[Payer], today: date, now: datetime) -> list[Invoic
     return invs
 
 
+def apply_demo_phones(cast: list[Payer], spec: str) -> None:
+    """DEMO_CALL_PHONES="Sharma Traders=+91 98xxxxxxxx, Priya Caterers=+91 97xxxxxxxx": real phones for
+    the reminder-call demo, so pressing Call rings someone at the table instead of a made-up number."""
+    by_name = {p.name.lower(): p for p in cast}
+    for part in filter(None, (x.strip() for x in spec.split(","))):
+        name, _, phone = part.partition("=")
+        payer = by_name.get(name.strip().lower())
+        if payer is None or not phone.strip():
+            raise SystemExit(f"DEMO_CALL_PHONES: no seeded customer called {name.strip()!r} (or no phone)")
+        payer.phone = india_digits(phone)
+
+
 def generate(now: datetime) -> tuple[list[Payer], list[Txn], list[Invoice]]:
     """Pure story generation (no DB): the cast, their payments and the invoices."""
     today = now.date()
     rng = random.Random(today.toordinal())
     cast = build_cast(rng, today, now)
+    apply_demo_phones(cast, get_settings().demo_call_phones)
     txns: list[Txn] = []
     for p in cast:
         txns += ram_txns(rng, p, today, now) if p.name == "Ram" else regular_txns(rng, p, today, now)

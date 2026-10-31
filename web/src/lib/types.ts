@@ -231,6 +231,10 @@ export type Reminder = {
   call_promised_date: string | null;
   call_transcript: { role: "agent" | "user"; en_text: string }[] | null;
   call_failure: string | null;
+  call_summary: string | null;
+  call_link_sent_at: string | null;
+  /** On an email: the call it was sent from (by the agent mid-call, or right after it). */
+  sent_during_call: string | null;
 };
 
 export type InvoiceList = {
@@ -241,7 +245,7 @@ export type InvoiceList = {
 
 export type PendingAction = {
   token: string;
-  tool: "create_invoice" | "send_reminder" | "set_recurring";
+  tool: "create_invoice" | "send_reminder" | "set_recurring" | "call_customer";
   summary: Record<string, string | number | string[] | null>;
   expires_at: string;
 };

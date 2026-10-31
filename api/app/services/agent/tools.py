@@ -21,6 +21,7 @@ from psycopg.types.json import Jsonb
 from ...db import app_now, app_today, fetch_all, fetch_one
 from ...money import IST, format_inr, paise_to_rupees, rupees_to_paise
 from .. import ledger
+from ..calls import e164
 
 PENDING_TTL = timedelta(minutes=15)
 
@@ -71,6 +72,10 @@ TOOLS: list[dict] = [
     _strict("send_reminder", "Prepare a payment reminder email (same Paytm link and QR) for an unpaid invoice. "
             "Returns a pending action the merchant must confirm. Component: confirm_action.",
             {"invoice_id": {"type": "string"}}, ["invoice_id"]),
+    _strict("call_customer", "Prepare a reminder phone call about an unpaid invoice: a voice agent rings the "
+            "customer, asks when they'll pay and can email them the Paytm link during the call. Returns a "
+            "pending action the merchant must confirm. Component: confirm_action.",
+            {"invoice_id": {"type": "string"}}, ["invoice_id"]),
     _strict("set_recurring", "Prepare marking a customer as recurring (weekly or monthly dues; with an email, "
             "invoices and overdue reminders go out automatically). Returns a pending action to confirm.",
             {"payer_id": {"type": "string"}, "cadence": {"type": "string", "enum": ["weekly", "monthly"]},
@@ -80,7 +85,7 @@ TOOLS: list[dict] = [
 ]
 
 TOOL_NAMES = {t["name"] for t in TOOLS}
-WRITE_TOOLS = {"create_invoice", "send_reminder", "set_recurring"}
+WRITE_TOOLS = {"create_invoice", "send_reminder", "set_recurring", "call_customer"}
 
 
 class ToolError(Exception):
@@ -454,6 +459,31 @@ async def send_reminder(ctx: ToolContext, invoice_id: str) -> dict:
     return await _pending(ctx, "send_reminder", {"invoice_id": str(iid)}, summary)
 
 
+async def call_customer(ctx: ToolContext, invoice_id: str) -> dict:
+    try:
+        iid = UUID(invoice_id)
+    except ValueError as e:
+        raise ToolError("invoice_id must come from list_dues or get_payer_summary") from e
+    inv = await fetch_one(
+        ctx.conn,
+        "select i.*, p.display_name, p.phone from invoices i join payers p on p.id = i.payer_id "
+        "where i.id = %s and i.merchant_id = %s",
+        (iid, ctx.merchant_id),
+    )
+    if inv is None:
+        raise ToolError("no such invoice")
+    if inv["status"] not in ("sent", "overdue"):
+        raise ToolError(f"invoice is {inv['status']}; only unpaid invoices get reminder calls")
+    phone = e164(inv["phone"])
+    if not phone:
+        raise ToolError("this customer has no phone number; the merchant must add one first")
+    summary = {"title": f"Call {inv['display_name']} about {inv['number']}", "customer": inv["display_name"],
+               "amount": format_inr(inv["amount_paise"]), "amount_rupees": _rs(inv["amount_paise"]),
+               "invoice": inv["number"], "phone": phone, "status": inv["status"],
+               "delivery": f"Voice agent calls {phone}"}
+    return await _pending(ctx, "call_customer", {"invoice_id": str(iid)}, summary)
+
+
 async def set_recurring(ctx: ToolContext, payer_id: str, cadence: str, amount: float, email: str | None) -> dict:
     p = await _payer(ctx, payer_id)
     paise = rupees_to_paise(amount)
@@ -471,7 +501,7 @@ async def set_recurring(ctx: ToolContext, payer_id: str, cadence: str, amount: f
 IMPLS = {
     "find_payer": find_payer, "get_payer_summary": get_payer_summary, "list_transactions": list_transactions,
     "get_sales_summary": get_sales_summary, "list_dues": list_dues, "create_invoice": create_invoice,
-    "send_reminder": send_reminder, "set_recurring": set_recurring,
+    "send_reminder": send_reminder, "set_recurring": set_recurring, "call_customer": call_customer,
 }
 
 

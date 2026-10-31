@@ -37,7 +37,8 @@ async def get_invoice(invoice_id: UUID, merchant: CurrentMerchant, conn: Conn):
     inv["reminders"] = await fetch_all(
         conn,
         "select id, kind, channel, to_email, to_phone, sent_at, call_status, call_duration_s, call_outcome, "
-        "call_promised_date, call_transcript, call_failure from reminders where invoice_id = %s order by sent_at",
+        "call_promised_date, call_transcript, call_failure, call_summary, call_link_sent_at, sent_during_call "
+        "from reminders where invoice_id = %s order by sent_at",
         (invoice_id,),
     )
     inv["payment"] = await fetch_one(

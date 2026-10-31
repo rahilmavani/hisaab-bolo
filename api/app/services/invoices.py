@@ -226,7 +226,8 @@ async def attach_payment_artifacts(conn: AsyncConnection, inv: dict, merchant_na
     )
 
 
-async def send_invoice_email(conn: AsyncConnection, merchant_id: UUID, invoice_id: UUID, kind: str) -> dict:
+async def send_invoice_email(conn: AsyncConnection, merchant_id: UUID, invoice_id: UUID, kind: str,
+                             during_call: UUID | None = None) -> dict:
     inv = await get_invoice(conn, merchant_id, invoice_id)
     if inv is None:
         raise InvoiceError(404, "Invoice not found")
@@ -269,9 +270,9 @@ async def send_invoice_email(conn: AsyncConnection, merchant_id: UUID, invoice_i
     now = await app_now(conn)
     reminder = await fetch_one(
         conn,
-        "insert into reminders (merchant_id, invoice_id, kind, to_email, sent_at, resend_id) "
-        "values (%s, %s, %s, %s, %s, %s) returning *",
-        (merchant_id, invoice_id, kind, to, now, sent.id),
+        "insert into reminders (merchant_id, invoice_id, kind, to_email, sent_at, resend_id, sent_during_call) "
+        "values (%s, %s, %s, %s, %s, %s, %s) returning *",
+        (merchant_id, invoice_id, kind, to, now, sent.id, during_call),
     )
     # sent_at: when the customer first got the link by email (every email carries it). Any overdue
     # reminder also satisfies the queued automatic one.
@@ -299,12 +300,12 @@ async def _fetch_qr_b64(url: str) -> str | None:
         return None
 
 
-async def remind(conn: AsyncConnection, merchant_id: UUID, invoice_id: UUID) -> dict:
+async def remind(conn: AsyncConnection, merchant_id: UUID, invoice_id: UUID, during_call: UUID | None = None) -> dict:
     inv = await get_invoice(conn, merchant_id, invoice_id)
     if inv is None:
         raise InvoiceError(404, "Invoice not found")
     kind = "overdue" if inv["status"] == "overdue" or inv["due_in_days"] < 0 else "invoice"
-    return await send_invoice_email(conn, merchant_id, invoice_id, kind=kind)
+    return await send_invoice_email(conn, merchant_id, invoice_id, kind=kind, during_call=during_call)
 
 
 async def cancel(conn: AsyncConnection, merchant_id: UUID, invoice_id: UUID) -> dict:

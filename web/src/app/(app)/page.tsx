@@ -7,6 +7,7 @@ import { useState } from "react";
 import { PeakHoursHeatmap, TrendChart, type Grain } from "@/components/charts";
 import { InvoiceStatusText } from "@/components/invoice-status";
 import { PayerSearch } from "@/components/payer-search";
+import { PromisedPayments } from "@/components/promised-payments";
 import {
   Avatar,
   ErrorNote,
@@ -258,6 +259,8 @@ export default function DashboardPage() {
             </p>
           )}
         </section>
+
+        <PromisedPayments />
 
         <section className="panel min-w-0 p-5 sm:p-6">
           <SectionTitle

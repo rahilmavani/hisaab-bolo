@@ -407,8 +407,12 @@ export default function InvoicePage() {
               </li>
               {inv.reminders.map((r, i) =>
                 r.channel === "call" ? (
-                  <CallHistoryItem key={r.id} r={r} />
-                ) : (
+                  <CallHistoryItem
+                    key={r.id}
+                    r={r}
+                    emails={inv.reminders.filter((e) => e.sent_during_call === r.id)}
+                  />
+                ) : r.sent_during_call ? null : (
                 <li key={r.id ?? i}>
                   <span className="text-text">
                     {r.kind === "overdue"

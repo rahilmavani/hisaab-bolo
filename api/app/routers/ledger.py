@@ -9,6 +9,7 @@ from ..auth import Conn, CurrentMerchant
 from ..config import get_settings
 from ..db import app_now, fetch_one
 from ..services import ledger
+from ..services.calls import promised_payments
 from ..services.payers import PayerError, merge_payers, update_payer
 from ..validation import SafeStr, check_date, check_query_text, no_nul
 
@@ -47,6 +48,12 @@ async def dashboard_trend(
         end = (await app_now(conn)).astimezone(ledger.IST).date()
     return {"days": days, "grain": grain, "end": end,
             "points": await ledger.trend(conn, merchant.id, end, days, grain)}
+
+
+@router.get("/dashboard/promises")
+async def dashboard_promises(merchant: CurrentMerchant, conn: Conn):
+    """Who promised on a reminder call to pay, and by when (broken promises first)."""
+    return {"promises": await promised_payments(conn, merchant.id)}
 
 
 @router.get("/payers")

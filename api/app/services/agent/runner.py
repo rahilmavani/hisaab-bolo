@@ -53,7 +53,7 @@ date 4 months ago through today: take the start from the range starts given with
 the 1st, "pichhle mahine" / "last month" (no number) = the previous calendar month, "pichhle hafte" / "last week" \
 = the previous Monday-Sunday week, "pichhle N din" / "last N days" = the N days ending today (today counts). \
 Today's date is given with each question.
-- Write actions (create_invoice, send_reminder, set_recurring) only prepare a pending action. Nothing happens until \
+- Write actions (create_invoice, send_reminder, set_recurring, call_customer) only prepare a pending action. Nothing happens until \
 the merchant taps Confirm, so say it is ready to confirm, never that it is done. Include a confirm_action component.
 - Pick components that show the data behind your answer, referencing result_id values from tool results: \
 payer_card for one customer's summary, table for lists of payments or invoices, line_chart and stat_cards for sales, \

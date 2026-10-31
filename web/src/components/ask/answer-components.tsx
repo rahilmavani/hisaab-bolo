@@ -196,6 +196,7 @@ function InvoiceCard({ data }: { data: Record<string, unknown> }) {
 const ACTION_VERB: Record<PendingAction["tool"], string> = {
   create_invoice: "Create invoice",
   send_reminder: "Send reminder",
+  call_customer: "Call customer",
   set_recurring: "Mark recurring",
 };
 

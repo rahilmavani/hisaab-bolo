@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, RefreshCw, Send } from "lucide-react";
+import { Phone, Plus, RefreshCw, Send } from "lucide-react";
 import Link from "next/link";
 import { Fragment, useState } from "react";
 import { useMe } from "@/components/app-shell";
@@ -13,7 +13,7 @@ import { dateOnly, inr, istDate, istISODate } from "@/lib/format";
 import type { Invoice, InvoiceList } from "@/lib/types";
 
 type RowState = {
-  busy?: "remind" | "check";
+  busy?: "remind" | "call" | "check";
   note?: string;
   error?: boolean;
   muted?: boolean;
@@ -41,7 +41,7 @@ export default function CollectionsPage() {
       (i.email_to || i.payer_email),
   );
 
-  async function act(inv: Invoice, kind: "remind" | "check") {
+  async function act(inv: Invoice, kind: "remind" | "call" | "check") {
     setRowState((s) => ({ ...s, [inv.id]: { busy: kind } }));
     try {
       if (kind === "remind") {
@@ -52,6 +52,15 @@ export default function CollectionsPage() {
         setRowState((s) => ({
           ...s,
           [inv.id]: { note: `Reminder sent to ${r.intended_to}` },
+        }));
+      } else if (kind === "call") {
+        const r = await api<{ intended_to: string }>(
+          `/invoices/${inv.id}/call`,
+          { method: "POST" },
+        );
+        setRowState((s) => ({
+          ...s,
+          [inv.id]: { note: `Calling ${r.intended_to}…` },
         }));
       } else {
         const r = await api<{ status: string }>(`/invoices/${inv.id}/check`, {
@@ -121,6 +130,23 @@ export default function CollectionsPage() {
         >
           <Send size={14} aria-hidden />{" "}
           {st.busy === "remind" ? "Sending…" : "Send reminder"}
+        </button>
+        <button
+          className="btn btn-quiet px-3 py-1.5 text-sm"
+          onClick={() => act(inv, "call")}
+          disabled={
+            Boolean(st.busy) ||
+            !inv.payer_phone ||
+            inv.last_call_status === "queued"
+          }
+          title={inv.payer_phone ? undefined : "Add a phone number to this customer first"}
+        >
+          <Phone size={14} aria-hidden />{" "}
+          {st.busy === "call"
+            ? "Starting…"
+            : inv.last_call_status === "queued"
+              ? "Calling…"
+              : "Call"}
         </button>
         <button
           className="btn btn-quiet px-3 py-1.5 text-sm"

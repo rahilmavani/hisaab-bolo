@@ -5,6 +5,7 @@ os.environ["EMAIL_MODE"] = "log"
 os.environ["PAYTM_MODE"] = "mock"
 os.environ["CALL_MODE"] = "log"  # reminder calls are recorded, never placed
 os.environ["DEMO_CUSTOMER_PHONE"] = ""
+os.environ["DEMO_CALL_PHONES"] = ""  # the seeded story keeps its made-up numbers
 os.environ["RUN_SCHEDULER"] = "false"
 os.environ["AGENT_WARMUP"] = "false"
 

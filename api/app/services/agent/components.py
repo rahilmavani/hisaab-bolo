@@ -12,6 +12,7 @@ ALLOWED = {
     "list_dues": {"table", "stat_cards", "invoice_card"},
     "create_invoice": {"confirm_action", "invoice_card"},
     "send_reminder": {"confirm_action", "invoice_card"},
+    "call_customer": {"confirm_action", "invoice_card"},
     "set_recurring": {"confirm_action"},
 }
 

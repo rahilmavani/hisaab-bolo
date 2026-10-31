@@ -1,12 +1,15 @@
 "use client";
 
-import { CheckCircle2, X } from "lucide-react";
+import { CheckCircle2, MailCheck, Phone, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSWRConfig } from "swr";
+import { callOutcomeText, callStatusLabel } from "@/components/call-status";
+import { api } from "@/lib/api";
 import { inr } from "@/lib/format";
+import type { InvoiceDetail, Reminder } from "@/lib/types";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
-type Toast = { id: string; title: string; body: string };
+type Toast = { id: string; title: string; body: string; icon?: "paid" | "call" | "link" };
 
 const LIVE_KEYS = ["/invoices", "/dashboard", "/payers", "/transactions"];
 
@@ -22,6 +25,8 @@ export function LiveUpdates({ merchantId }: { merchantId: string }) {
     new Map<string, { number: string; amount_paise: number }>(),
   );
   const freshPayments = useRef(new Set<string>());
+  // Call updates: announce each call's end once, and a mid-call payment link once.
+  const announcedCalls = useRef(new Set<string>());
 
   useEffect(() => {
     const supabase = supabaseBrowser();
@@ -41,6 +46,39 @@ export function LiveUpdates({ merchantId }: { merchantId: string }) {
       };
       setToasts((t) => [...t.filter((x) => x.id !== id), toast]);
       setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 8000);
+    };
+    const push = (toast: Toast) => {
+      setToasts((t) => [...t.filter((x) => x.id !== toast.id), toast]);
+      setTimeout(() => setToasts((t) => t.filter((x) => x.id !== toast.id)), 9000);
+    };
+    const onCall = async (r: Reminder & { invoice_id: string }) => {
+      const ended = r.call_status && r.call_status !== "queued";
+      const key = ended ? `end:${r.id}` : r.call_link_sent_at ? `link:${r.id}` : null;
+      if (!key || announcedCalls.current.has(key)) return;
+      announcedCalls.current.add(key);
+      if (ended) announcedCalls.current.add(`link:${r.id}`); // the end toast mentions the link
+      let who = "the customer";
+      let number = "";
+      try {
+        const inv = await api<InvoiceDetail>(`/invoices/${r.invoice_id}`);
+        who = inv.payer_name;
+        number = inv.number;
+      } catch {
+        /* toast without the name */
+      }
+      if (ended) {
+        const outcome = callOutcomeText(r.call_outcome, r.call_promised_date);
+        const parts = [outcome ?? callStatusLabel(r.call_status, r.call_duration_s).text];
+        if (r.call_link_sent_at) parts.push("payment link emailed during the call");
+        push({ id: key, icon: "call", title: `Call with ${who} ended`, body: parts.join(" · ") });
+      } else {
+        push({
+          id: key,
+          icon: "link",
+          title: `${who} asked for the payment link`,
+          body: `The agent emailed the Paytm link${number ? ` for ${number}` : ""} during the call`,
+        });
+      }
     };
     const refresh = () => {
       if (timer) return;
@@ -116,7 +154,11 @@ export function LiveUpdates({ merchantId }: { merchantId: string }) {
           table: "reminders",
           filter: `merchant_id=eq.${merchantId}`,
         },
-        refresh,
+        (payload) => {
+          refresh();
+          const r = payload.new as Reminder & { invoice_id: string };
+          if (payload.eventType === "UPDATE" && r?.channel === "call") void onCall(r);
+        },
       )
       .subscribe();
     return () => {
@@ -136,7 +178,13 @@ export function LiveUpdates({ merchantId }: { merchantId: string }) {
           role="status"
           className="pointer-events-auto flex items-start gap-3 rounded-2xl border border-mint/30 bg-ink-2/95 px-4 py-3 shadow-xl backdrop-blur"
         >
-          <CheckCircle2 size={20} className="mt-0.5 text-mint" aria-hidden />
+          {t.icon === "call" ? (
+            <Phone size={20} className="mt-0.5 text-sky" aria-hidden />
+          ) : t.icon === "link" ? (
+            <MailCheck size={20} className="mt-0.5 text-mint" aria-hidden />
+          ) : (
+            <CheckCircle2 size={20} className="mt-0.5 text-mint" aria-hidden />
+          )}
           <div>
             <p className="font-semibold">{t.title}</p>
             <p className="text-sm text-muted">{t.body}</p>
