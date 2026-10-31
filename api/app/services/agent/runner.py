@@ -63,25 +63,37 @@ button), even when the tool result shows you only the first rows.
 
 How to answer (the final message is JSON matching the schema):
 - display: what appears on screen, 1-3 short sentences. English question → English. Hindi or Hinglish question \
-(in any script) → Hinglish in Roman letters. Lead with the answer.
+(in any script) → Hinglish in Roman letters. A question in another Indian language (Gujarati, Marathi, Tamil, \
+…) → that language in its own script. Lead with the answer.
 - speech: the same answer as display, in the same language, for text-to-speech, at most 2 short sentences. For an \
 English question speak plain English. For a Hindi or Hinglish question, always \
 write the Hindi words in Devanagari (even if the question was typed in Roman letters) and keep English words such \
 as payment, invoice, reminder and customer names in Roman letters. Write every number as digits (₹12,100, 121, 8:30) \
 and only use numbers that appear in tool results or in the question. Leave speech empty if you have nothing \
 grounded to say.
-- lang: "hi-IN" if speech is Hindi or Hinglish, otherwise "en-IN".
+- lang: "hi-IN" if speech is Hindi or Hinglish, the language's code (gu-IN, mr-IN, ta-IN, …) for another Indian \
+language, otherwise "en-IN".
 - follow_ups: up to 2 short next questions the merchant might tap (e.g. "Show all 121 payments", "Compare with last \
 year"), in the display language.
 - If the question is not about this shop's payments, customers, invoices or reminders, say briefly what you can help \
 with and use no components."""
+
+# Indian languages besides Hindi that Sarvam hears and speaks (Bulbul v3), by its language code.
+OTHER_LANGUAGES = {"gu": "Gujarati", "mr": "Marathi", "bn": "Bengali", "pa": "Punjabi", "od": "Odia", "ta": "Tamil",
+                   "te": "Telugu", "kn": "Kannada", "ml": "Malayalam"}
+# Unicode block of each script (Marathi writes in Devanagari, so only the voice path's detected language tells it
+# apart from Hindi).
+SCRIPT_BLOCKS = {"bn": 0x0980, "pa": 0x0A00, "gu": 0x0A80, "od": 0x0B00, "ta": 0x0B80, "te": 0x0C00, "kn": 0x0C80,
+                 "ml": 0x0D00}
+# Every Indic script keeps its digits at the same place in its block; the number guard reads Western digits.
+INDIC_DIGITS = {base + 0x66 + i: str(i) for base in range(0x0900, 0x0D80, 0x80) for i in range(10)}
 
 ANSWER_SCHEMA = {
     "type": "object",
     "properties": {
         "display": {"type": "string"},
         "speech": {"type": "string"},
-        "lang": {"type": "string", "enum": ["hi-IN", "en-IN"]},
+        "lang": {"type": "string", "enum": ["hi-IN", "en-IN", *(f"{c}-IN" for c in OTHER_LANGUAGES)]},
         "components": {
             "type": "array",
             "items": {
@@ -212,6 +224,8 @@ TIME_UNIT = (r"(din|dino|dinon|mahine|mahina|mahino|mahinon|hafte|hafta|hafton|s
 TIME_QUANTITY_RE = re.compile(r"([\d०-९]+|[\w\u0900-\u097F]+)\s*" + TIME_UNIT + r"(?![\w\u0900-\u097F])", re.I)
 DAY_OF_MONTH_UNIT = re.compile(r"jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|tarikh|tareekh|तारीख", re.I)
 CLOCK_UNIT = re.compile(r"baje|am|pm|बजे", re.I)
+# Gujarati and Marathi time words take suffixes ("4 મહિનામાં", "3 दिवसांत"), so their stems match.
+OTHER_TIME_RE = re.compile(r"(\d+)\s*(?:મહિન|દિવસ|અઠવાડ|વર્ષ|વાગ્|કલાક|તારીખ|महिन|महीन|दिवस|आठवड|वर्ष|वाज|तास|तारीख)")
 
 
 def number_words(text: str) -> set[Decimal]:
@@ -280,6 +294,7 @@ def question_numbers(question: str) -> str:
     for qty, unit in TIME_QUANTITY_RE.findall(_norm_dev(question)):
         cap = 31 if DAY_OF_MONTH_UNIT.match(unit) else 24 if CLOCK_UNIT.fullmatch(unit) else 1000
         nums |= {n for n in numbers_in(qty) | number_words(qty) if n <= cap}
+    nums |= {Decimal(q) for q in OTHER_TIME_RE.findall(question.translate(INDIC_DIGITS)) if int(q) <= 1000}
     return " ".join(format(n, "f") for n in nums)  # plain digits: str(Decimal("3E+1")) reads back as 3 and 1
 
 
@@ -321,9 +336,13 @@ def hinglish_words(text: str) -> int:
     return len(set(re.findall(r"[a-z]+", text.lower())) & HINGLISH_MARKERS)
 
 
-def reply_language(question: str) -> str:
+def reply_language(question: str, heard: str | None = None) -> str:
+    """"en", "hi" or an OTHER_LANGUAGES code: answer in the language asked. heard is the speech-to-text language."""
+    for code, base in SCRIPT_BLOCKS.items():
+        if any(base <= ord(ch) < base + 0x80 for ch in question):
+            return code
     if any("\u0900" <= ch <= "\u097f" for ch in question):
-        return "hi"
+        return "mr" if heard == "mr-IN" else "hi"
     words = set(re.findall(r"[a-z]+", question.lower()))
     return "hi" if words & HINGLISH_MARKERS else "en"
 
@@ -333,6 +352,10 @@ FALLBACK_TEXT = {
            "Sorry, I couldn't answer that reliably. Try asking about a customer, a date range or your invoices."),
     "hi": ("Yeh raha jo mila.",
            "Maaf kijiye, iska pakka jawab nahi de paaya. Kisi customer, tareekh ya invoice ke baare mein poochiye."),
+    "gu": ("આ રહ્યું જે મળ્યું.",
+           "માફ કરશો, આનો પાકો જવાબ ન આપી શક્યો. કોઈ customer, તારીખ કે invoice વિશે પૂછો."),
+    "mr": ("हे मिळालं.",
+           "माफ करा, याचं नक्की उत्तर देता आलं नाही. एखाद्या customer, तारखेबद्दल किंवा invoice बद्दल विचारा."),
 }
 
 LANGUAGE_NOTE = {
@@ -340,6 +363,9 @@ LANGUAGE_NOTE = {
           "confirming an action), lang en-IN.",
     "hi": "Answer language: Hinglish. display in Roman-script Hinglish; speech in Devanagari script with English "
           "words and names in Roman letters; lang hi-IN.",
+    **{code: f"Answer language: {name}. display, speech and follow_ups in {name} script, with English words such as "
+             f"payment, invoice, reminder and customer names in Roman letters and numbers in Western digits "
+             f"(₹12,100, 121); lang {code}-IN." for code, name in OTHER_LANGUAGES.items()},
 }
 
 
@@ -460,6 +486,7 @@ async def ask(
     history: list[dict] | None = None,
     payer_hint: str | None = None,
     source: str = "text",
+    heard_lang: str | None = None,
 ) -> dict:
     s = get_settings()
     started = time.monotonic()
@@ -476,7 +503,8 @@ async def ask(
         if h.get("question") and h.get("answer"):
             messages += [{"role": "user", "content": h["question"]}, {"role": "assistant", "content": h["answer"]}]
     origin = "Voice transcript" if source == "voice" else "Typed question"
-    lang_note = LANGUAGE_NOTE[reply_language(question)]
+    q_lang = reply_language(question, heard_lang)
+    lang_note = LANGUAGE_NOTE[q_lang]
     ranges = range_starts(now.astimezone(IST).date())
     messages.append({"role": "user", "content": f"{context} {ranges}{hint}\n{lang_note}\n{origin}: {question}"})
 
@@ -484,7 +512,6 @@ async def ask(
     # Follow-ups ("saari payments dikhao") may repeat the time range of the question they continue.
     earlier = " ".join(question_numbers(h.get("question", "")) for h in (history or [])[-3:])
     allowed_extra = [question_numbers(question), earlier, context, hint]
-    q_lang = reply_language(question)
     attempts = []
     contexts: list[ToolContext] = []
     kept: tuple[dict, ToolContext] | None = None  # the answer to show, with the lookups behind it
@@ -500,6 +527,8 @@ async def ask(
         attempts.append({"model": model, "usage": usage, "cost_paise": _cost_paise(model, usage)})
         if answer is None:
             continue
+        answer["display"], answer["speech"] = (answer[k].translate(INDIC_DIGITS) for k in ("display", "speech"))
+        answer["follow_ups"] = [f.translate(INDIC_DIGITS) for f in answer.get("follow_ups", [])]
         allowed = grounded_numbers(visible_sources(ctx) + allowed_extra)
         guard_failed = ungrounded(answer["speech"], allowed) | ungrounded(answer["display"], allowed)
         if guard_failed:
@@ -532,8 +561,9 @@ async def ask(
             if key not in seen:  # the same lookup twice shows once
                 seen.add(key)
                 auto.append({"type": _default_component(r["tool"]), "result_id": rid})
-        found, sorry = FALLBACK_TEXT[q_lang]
-        answer = {"display": found if auto else sorry, "speech": "", "lang": "hi-IN" if q_lang == "hi" else "en-IN",
+        found, sorry = FALLBACK_TEXT.get(q_lang, FALLBACK_TEXT["en"])
+        answer = {"display": found if auto else sorry, "speech": "",
+                  "lang": "en-IN" if q_lang == "en" or q_lang not in FALLBACK_TEXT else f"{q_lang}-IN",
                   "components": auto, "follow_ups": []}
     if not fell_back and q_lang == "en" and answer["speech"] and reply_language(answer["speech"]) == "hi":
         if hinglish_words(answer["display"]) < 2:
