@@ -1,0 +1,25 @@
+# secrets
+.env
+.env.*
+*.env
+!.env.example
+
+# deps & builds
+node_modules/
+.next/
+__pycache__/
+.venv/
+*.pyc
+.DS_Store
+# local supabase
+supabase/signing_keys.json
+supabase/.temp/
+supabase/.branches/
+
+# tests
+web/test-results/
+web/playwright-report/
+.pytest_cache/
+
+# playwright auth state
+web/e2e/.auth/

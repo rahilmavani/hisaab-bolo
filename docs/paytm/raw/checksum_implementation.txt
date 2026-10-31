@@ -1,0 +1,1463 @@
+### MAIN TEXT
+Checksum Implementation
+Installing Checksum Utility
+
+ 
+
+First, you need to install the checksum utility in your application. There are two ways to install the checksum utility and you can follow either of them.
+
+ 
+
+Option 1: Installing Checksum Utility via GitHub
+
+Paytm supports the Checksum generation and validation utility for all the major languages. 
+
+To add the Checksum utility to your application, follow the steps mentioned below:
+
+ 
+
+Step 1: Click the icon below to get the GitHub link for each language.
+
+ 
+
+Java
+Node
+PHP
+Python
+ASP.NET
+Ruby on Rails
+Perl
+Go
+
+ 
+
+Step 2: Download the Paytm checksum utility through GitHub for your application platform and include it in your server-side module.
+
+ 
+
+Option 2: Installing Checksum Utility via a Package Manager
+
+Paytm also facilitates you to install the Checksum utility via a package installer. To do so, follow the below steps:
+
+ 
+
+Languages
+JAVA
+Node
+PHP
+Python
+
+Installing Paytm Checksum utility with Maven
+
+ 
+
+Prerequisites: Make sure that you have Java SDK installed in your system. The JDK version should be 1.7 or later.
+
+To install the Paytm Checksum utility with Maven, follow these steps:
+
+Add the below maven dependency to your Project Object Model.
+<dependency>
+    <groupId>com.paytm.pg</groupId>
+    <artifactId>paytm-checksum</artifactId>
+    <version>1.2.1</version>
+</dependency>
+Build and install locally by executing the below command:
+mvn install
+
+ 
+
+Creating Checksum Hash
+
+ 
+
+Each API call needs a new checksum created for that API having all the attributes used for that particular API call. Paytm will validate this checksum against the requested API body. After the successful validation, the checksum hash token is generated.
+
+ 
+
+Sample of Generated Token
+
+ 
+
+The sample of a generated token looks like the combination of alphabet and characters, such as: 267c18bf5bb34fc38d222e108d3ec3551665730257646
+
+ 
+
+After installing the Paytm Checksum utility using the steps mentioned above, you need to create the checksum for relevant APIs before sending the request. You can do that either through JSON Request or For Post Request. You need to create the checksum hash while sending the request for the API where the authentication mechanism is the checksum e.g. Initiate Transaction API.
+
+ 
+
+ Caution: To create the checksum, you must use the parameters mentioned in the API. If there’s an optional parameter present in the API request, it must be included in the checksum creation logic.
+
+ 
+
+JSON Request
+
+In the JSON Post Request, you need to create the checksum hash using the Merchant Key of your account and the complete body request. In this, you need to pass the request body as a String. 
+
+ 
+
+Sample Checksumhash codes for common languages are mentioned below:
+
+ 
+
+JAVA
+Node
+PHP
+Python
+.NET
+Ruby
+Perl
+Go
+/* import checksum generation utility */
+import com.paytm.pg.merchant.*;
+
+/* initialize JSON String */
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+
+/**
+ * Generate checksum by parameters we have in the body
+ * Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+ */
+
+paytmChecksum = PaytmChecksum.generateSignature(body, "YOUR_MERCHANT_KEY");
+System.out.println("generateSignature Returns: " + paytmChecksum);
+
+ 
+
+ 
+Form Post Request
+
+You can also use the Form Post Request for creating checksum hash. If you are using the Form Post Request, then you need to create the checksum hash using the Merchant Key of your account and all the API Request parameters. 
+
+Sample checksum hash codes for common languages are mentioned below:
+ 
+
+JAVA
+Node
+PHP
+Python
+.NET
+Ruby
+Perl
+Go
+/* import checksum generation utility */
+import com.paytm.pg.merchant.*;
+
+/* initialize an hash */
+TreeMap<String, String> paytmParams = new TreeMap<String, String>();
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+paytmParams.put("MID", "YOUR_MID_HERE");
+paytmParams.put("ORDERID", "YOUR_ORDERID_HERE");
+/**
+ * Generate checksum by parameters we have
+ * Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+ */
+String paytmChecksum = PaytmChecksum.generateSignature(paytmParams, "YOUR_MERCHANT_KEY");
+System.out.println("generateSignature Returns: " + paytmChecksum);
+
+ 
+
+Validating Checksum Hash
+
+ 
+
+Paytm Checksum Utility also validates the checksum hash and returns the validation success or fail response. The validation of the checksum is required to be done in the callback and webhook responses. 
+
+ 
+
+To validate the checksum in the response, use the function as explained below:
+
+ 
+
+JSON Request
+
+In the JSON Post Request, you need to create the checksum hash using the Merchant Key of your account and the complete body request. In this, you need to pass the request body as a String. Sample checksum hash validation code snippets for some programming languages are mentioned below:
+
+ 
+
+JAVA
+Node
+PHP
+Python
+.NET
+Ruby
+Perl
+Go
+/* import checksum generation utility */
+import com.paytm.pg.merchant.*; 
+
+/* string we need to verify against checksum */
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* checksum that we need to verify */
+String paytmChecksum = "CHECKSUM_VALUE";
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+boolean isVerifySignature = PaytmChecksum.verifySignature(body, "YOUR_MERCHANT_KEY", paytmChecksum);
+if (isVerifySignature) {
+	System.out.append("Checksum Matched");
+} else {
+	System.out.append("Checksum Mismatched");
+}
+
+ 
+
+ 
+Form Post Request
+
+In the Form Post Request, you need to validate checksumhash using the merchant key of your account and all the API request parameters. Sample checksumhash validation codes for common languages are mentioned below:
+
+ 
+
+ Note: This is used for validation of checksum in the callback response of the transaction.
+
+ 
+
+JAVA
+Node
+PHP
+Python
+.NET
+Ruby
+Perl
+Go
+/* import checksum generation utility */
+import com.paytm.pg.merchant.*;
+
+String paytmChecksum = null;
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* Create a TreeMap from the parameters received in POST */
+TreeMap<String, String> paytmParams = new TreeMap<String, String>();
+for (Entry<String, String[]> requestParamsEntry : request.getParameterMap().entrySet()) {
+    if ("CHECKSUMHASH".equalsIgnoreCase(requestParamsEntry.getKey())){
+        paytmChecksum = requestParamsEntry.getValue()[0];
+    } else {
+        paytmParams.put(requestParamsEntry.getKey(), requestParamsEntry.getValue()[0]);
+    }
+}
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+boolean isVerifySignature = PaytmChecksum.verifySignature(paytmParams, "YOUR_MERCHANT_KEY", paytmChecksum);
+if (isVerifySignature) {
+	System.out.append("Checksum Matched");
+} else {
+	System.out.append("Checksum Mismatched");
+}
+
+ 
+
+### PRE after load
+<dependency>
+    <groupId>com.paytm.pg</groupId>
+    <artifactId>paytm-checksum</artifactId>
+    <version>1.2.1</version>
+</dependency>
+-----
+"dependencies": {
+    ...
+    "paytmchecksum": "^1.5.0"
+    ...
+}
+-----
+"require": {
+    ...
+    "paytm/paytmchecksum": "*"
+    ...
+}
+-----
+"autoload": {
+    "psr-4": {
+    "paytm\\paytmchecksum\\": "paytmchecksum/"
+    }
+} 
+-----
+require_once('vendor/autoload.php');
+use paytm\checksum\PaytmChecksumLibrary;
+-----
+/* import checksum generation utility */
+import com.paytm.pg.merchant.*;
+
+/* initialize JSON String */
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+
+/**
+ * Generate checksum by parameters we have in the body
+ * Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+ */
+
+paytmChecksum = PaytmChecksum.generateSignature(body, "YOUR_MERCHANT_KEY");
+System.out.println("generateSignature Returns: " + paytmChecksum);
+-----
+/* import checksum generation utility */
+const PaytmChecksum = require("./PaytmChecksum");
+
+/* string we need to verify against checksum */
+
+var body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* checksum that we need to verify */
+var paytmChecksum = "CHECKSUM_VALUE";
+
+var isVerifySignature = PaytmChecksum.verifySignature(body, config.PAYTM_MERCHANT_KEY, paytmChecksum);
+if (isVerifySignature) {
+	console.log("Checksum Matched");
+} else {
+	console.log("Checksum Mismatched");
+}
+-----
+/* import checksum generation utility */
+require_once("PaytmChecksum.php");
+
+/* string we need to verify against checksum */  
+
+$body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* checksum that we need to verify */
+$paytmChecksum = "CHECKSUM_VALUE";
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+$isVerifySignature = PaytmChecksum::verifySignature($body, 'YOUR_MERCHANT_KEY', $paytmChecksum);
+if($isVerifySignature) {
+	echo "Checksum Matched";
+} else {
+	echo "Checksum Mismatched";
+}
+-----
+# import checksum generation utility
+import PaytmChecksum 
+
+# string we need to verify against checksum
+
+body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+#checksum that we need to verify
+paytmChecksum = "CHECKSUM_VALUE"
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+
+isVerifySignature = PaytmChecksum.verifySignature(body, "YOUR_MERCHANT_KEY", paytmChecksum)
+if isVerifySignature:
+	print("Checksum Matched")
+else:
+	print("Checksum Mismatched")
+-----
+/* string we need to verify against checksum */
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* checksum that we need to verify */
+string paytmChecksum = "CHECKSUM_VALUE";
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+bool isVerifySignature = Paytm.Checksum.verifySignature(paytmParams, "YOUR_MERCHANT_KEY", paytmChecksum);
+if (isVerifySignature) {
+	Response.Write("Checksum Matched");
+} else {
+	Response.Write("Checksum Mismatched");
+}
+
+-----
+# import checksum generation utility
+require './PaytmChecksum.rb'
+
+# string we need to verify against checksum
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+# checksum that we need to verify
+paytmChecksum = "CHECKSUM_VALUE"
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+
+isVerifySignature = PaytmChecksum.new.verifySignature(request.request_parameters, "YOUR_MERCHANT_KEY", paytmChecksum)
+if isVerifySignature
+	puts "Checksum Matched"
+else
+	puts "Checksum Mismatched"
+-----
+#!/usr/bin/perl 
+# import checksum generation utility
+use PaytmChecksum;
+
+# string we need to verify against checksum
+$body = "{"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}";
+# YOUR_COMPLETE_REQUEST_BODY_HERE
+
+# checksum that we need to verify
+$paytmChecksum = "CHECKSUM_VALUE";
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+
+my $isVerifySignature = PaytmChecksum::verifySignature($paytmParams, "YOUR_MERCHANT_KEY", $paytmchecksum);
+
+if($isVerifySignature){
+	printf("Checksum Matched");
+}else{
+	printf("Checksum Mismatched");
+}
+-----
+/* import checksum generation utility */
+import ("./paytm")
+
+/* string we need to verify against checksum */
+
+body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* checksum that we need to verify */
+paytmChecksum := "CHECKSUM_VALUE";
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+isVerifySignature := PaytmChecksum.VerifySignature(paytmParams, "YOUR_MERCHANT_KEY", paytmChecksum)
+if isVerifySignature {
+	fmt.Println("Checksum Matched")
+} else {
+	fmt.Println("Checksum Mismatched")
+}
+-----
+/* import checksum generation utility */
+import com.paytm.pg.merchant.*;
+
+/* initialize an hash */
+TreeMap<String, String> paytmParams = new TreeMap<String, String>();
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+paytmParams.put("MID", "YOUR_MID_HERE");
+paytmParams.put("ORDERID", "YOUR_ORDERID_HERE");
+/**
+ * Generate checksum by parameters we have
+ * Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+ */
+String paytmChecksum = PaytmChecksum.generateSignature(paytmParams, "YOUR_MERCHANT_KEY");
+System.out.println("generateSignature Returns: " + paytmChecksum);
+-----
+/* import checksum generation utility */
+const PaytmChecksum = require("./PaytmChecksum");
+
+var paytmParams = {};
+
+/* initialize an array */
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+paytmParams["MID"] = "YOUR_MID_HERE";
+paytmParams["ORDERID"] = "YOUR_ORDER_ID_HERE";
+
+/**
+* Generate checksum by parameters we have
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+var paytmChecksum = PaytmChecksum.generateSignature(paytmParams, "YOUR_MERCHANT_KEY");
+paytmChecksum.then(function(checksum){
+	console.log("generateSignature Returns: " + checksum);
+}).catch(function(error){
+	console.log(error);
+});
+-----
+/* import checksum generation utility */
+require_once("./PaytmChecksum.php");
+
+/* initialize an array */
+$paytmParams = array();
+
+/* add parameters in Array */
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+$paytmParams["MID"] = "YOUR_MID_HERE";
+$paytmParams["ORDERID"] = "YOUR_ORDERID_HERE";
+
+/**
+* Generate checksum by parameters we have
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+$paytmChecksum = PaytmChecksum::generateSignature($paytmParams, 'YOUR_MERCHANT_KEY');
+echo sprintf("generateSignature Returns: %s\n", $paytmChecksum);
+-----
+# import checksum generation utility
+import PaytmChecksum
+
+# initialize a Hash/Array
+paytmParams = {}
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\
+paytmParams["MID"] = "YOUR_MID_HERE"
+paytmParams["ORDERID"] = "YOUR_ORDER_ID_HERE"
+
+# Generate checksum by parameters we have
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+paytmChecksum = PaytmChecksum.generateSignature(paytmParams, "YOUR_MERCHANT_KEY")
+print("generateSignature Returns:" + str(paytmChecksum))
+-----
+/* initialize an array */
+Dictionary<string, string> paytmParams = new Dictionary<string, string>();
+
+/* add parameters in Array */
+paytmParams.Add("MID", "YOUR_MID_HERE");
+paytmParams.Add("ORDER_ID", "YOUR_ORDER_ID_HERE");
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+
+/**
+* Generate checksum by parameters we have
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+String paytmChecksum = Paytm.Checksum.generateSignature(paytmParams, "YOUR_MERCHANT_KEY");
+Response.Write("generateSignature Returns: " + paytmChecksum);
+-----
+# import checksum generation utility
+require './PaytmChecksum.rb'
+
+# initialize an array
+paytmParams = Hash.new
+
+paytmParams["MID"] = "YOUR_MID_HERE"
+paytmParams["ORDERID"] = "YOUR_ORDER_ID_HERE"
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\
+
+# Generate checksum by parameters we have
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+
+paytmChecksum = PaytmChecksum.new.generateSignature(paytmParams, "YOUR_MERCHANT_KEY")
+puts "generateSignature Returns: %s\n" %[paytmChecksum]
+-----
+#!/usr/bin/perl 
+
+# import checksum generation utility
+use PaytmChecksum;
+
+# initialize an hash
+my $paytmParams = {
+            "MID" => "YOUR_MID_HERE",
+            "ORDER_ID" => "YOUR_ORDER_ID_HERE"
+            };
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\
+# Generate checksum by parameters we have
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+my $paytmChecksum = PaytmChecksum::generateSignature($paytmParams,'YOUR_MERCHANT_KEY');
+printf("generateSignature Returns: %s\n", $paytmChecksum);
+-----
+/* import checksum generation utility */
+import ("./paytm")
+
+/* initialize an map */	
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+paytmParams := make(map[string]string)
+
+paytmParams = map[string]string{
+	"MID": "YOUR_MID_HERE",
+	"ORDER_ID": "YOUR_ORDER_ID_HERE",
+}
+
+/**
+* Generate checksum by parameters we have
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+paytmChecksum := PaytmChecksum.GenerateSignature(paytmParams, "YOUR_MERCHANT_KEY")
+fmt.Printf("generateSignature Returns: %s\n", paytmChecksum)
+-----
+/* import checksum generation utility */
+import com.paytm.pg.merchant.*; 
+
+/* string we need to verify against checksum */
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* checksum that we need to verify */
+String paytmChecksum = "CHECKSUM_VALUE";
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+boolean isVerifySignature = PaytmChecksum.verifySignature(body, "YOUR_MERCHANT_KEY", paytmChecksum);
+if (isVerifySignature) {
+	System.out.append("Checksum Matched");
+} else {
+	System.out.append("Checksum Mismatched");
+}
+-----
+/* string we need to verify against checksum */
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* checksum that we need to verify */
+string paytmChecksum = "CHECKSUM_VALUE";
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+bool isVerifySignature = Paytm.Checksum.verifySignature(paytmParams, "YOUR_MERCHANT_KEY", paytmChecksum);
+if (isVerifySignature) {
+	Response.Write("Checksum Matched");
+} else {
+	Response.Write("Checksum Mismatched");
+}
+-----
+# import checksum generation utility
+require './PaytmChecksum.rb'
+
+# string we need to verify against checksum
+
+body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+# checksum that we need to verify
+paytmChecksum = "CHECKSUM_VALUE"
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+
+isVerifySignature = PaytmChecksum.new.verifySignature(request.request_parameters, "YOUR_MERCHANT_KEY", paytmChecksum)
+if isVerifySignature
+	puts "Checksum Matched"
+else
+	puts "Checksum Mismatched"
+-----
+#!/usr/bin/perl 
+# import checksum generation utility
+use PaytmChecksum;
+
+# string we need to verify against checksum
+
+$body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+# checksum that we need to verify
+$paytmChecksum = "CHECKSUM_VALUE";
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+
+my $isVerifySignature = PaytmChecksum::verifySignature($paytmParams, "YOUR_MERCHANT_KEY", $paytmchecksum);
+
+if($isVerifySignature){
+	printf("Checksum Matched");
+}else{
+	printf("Checksum Mismatched");
+}
+-----
+/* import checksum generation utility */
+import com.paytm.pg.merchant.*;
+
+String paytmChecksum = null;
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* Create a TreeMap from the parameters received in POST */
+TreeMap<String, String> paytmParams = new TreeMap<String, String>();
+for (Entry<String, String[]> requestParamsEntry : request.getParameterMap().entrySet()) {
+    if ("CHECKSUMHASH".equalsIgnoreCase(requestParamsEntry.getKey())){
+        paytmChecksum = requestParamsEntry.getValue()[0];
+    } else {
+        paytmParams.put(requestParamsEntry.getKey(), requestParamsEntry.getValue()[0]);
+    }
+}
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+boolean isVerifySignature = PaytmChecksum.verifySignature(paytmParams, "YOUR_MERCHANT_KEY", paytmChecksum);
+if (isVerifySignature) {
+	System.out.append("Checksum Matched");
+} else {
+	System.out.append("Checksum Mismatched");
+}
+-----
+/* import checksum generation utility */
+const PaytmChecksum = require("./PaytmChecksum");
+
+paytmChecksum = request.body.CHECKSUMHASH;
+delete request.body.CHECKSUMHASH;
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+var isVerifySignature = PaytmChecksum.verifySignature(request.body, config.PAYTM_MERCHANT_KEY, paytmChecksum);
+if (isVerifySignature) {
+	console.log("Checksum Matched");
+} else {
+	console.log("Checksum Mismatched");
+}
+-----
+/* import checksum generation utility */
+require_once("PaytmChecksum.php");
+
+$paytmParams = $_POST;
+
+$paytmChecksum = $_POST['paytmChecksum'];
+unset($paytmParams['paytmChecksum']);
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+$isVerifySignature = PaytmChecksum::verifySignature($paytmParams, 'YOUR_MERCHANT_KEY', $paytmChecksum);
+if($isVerifySignature) {
+	echo "Checksum Matched";
+} else {
+	echo "Checksum Mismatched";
+}
+-----
+# import checksum generation utility
+import PaytmChecksum
+
+paytmParams = dict()
+paytmParams = request.form.to_dict()
+paytmChecksum = paytmChecksum
+paytmChecksum = paytmParams['CHECKSUMHASH']
+paytmParams.pop('CHECKSUMHASH', None)
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+isVerifySignature = PaytmChecksum.verifySignature(paytmParams, "YOUR_MERCHANT_KEY",paytmChecksum)
+if isVerifySignature:
+	print("Checksum Matched")
+else:
+	print("Checksum Mismatched")
+-----
+String paytmChecksum = "";
+
+/* Create a Dictionary from the parameters received in POST */
+Dictionary<String, String> paytmParams = new Dictionary<String, String>();
+
+foreach (string key in Request.Form.Keys) {
+	if (key.Equals("CHECKSUMHASH")) {
+            paytmChecksum = Request.Form[key];
+        } else {
+            paytmParams.Add(key.Trim(), Request.Form[key].Trim());
+	}
+}
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+bool isVerifySignature = Paytm.Checksum.verifySignature(paytmParams, "YOUR_MERCHANT_KEY", paytmChecksum);
+if (isVerifySignature) {
+	Response.Write("Checksum Matched");
+} else {
+	Response.Write("Checksum Mismatched");
+}
+-----
+# import checksum generation utility
+require './PaytmChecksum.rb'
+
+paytmChecksum = request.request_parameters['CHECKSUMHASH']
+request.request_parameters.delete(:CHECKSUMHASH)
+
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+
+isVerifySignature = PaytmChecksum.new.verifySignature(request.request_parameters, "YOUR_MERCHANT_KEY", paytmChecksum)
+if isVerifySignature
+	puts "Checksum Matched"
+else
+	puts "Checksum Mismatched"
+-----
+#!/usr/bin/perl 
+
+# import checksum generation utility
+use PaytmChecksum; 
+
+my $paytmParams = params;
+my $paytmchecksum= $paytmParams->{CHECKSUMHASH};
+delete $paytmParams->{'CHECKSUMHASH'};
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+
+my $isVerifySignature = PaytmChecksum::verifySignature($paytmParams, "YOUR_MERCHANT_KEY", $paytmchecksum);
+
+if($isVerifySignature){
+	printf("Checksum Matched");
+}else{
+	printf("Checksum Mismatched");
+}
+-----
+/* import checksum generation utility */
+import ("./paytm")
+
+/* r := *http.Request */
+r.ParseForm()
+
+paytmParams := r.Form
+paytmChecksum := paytmParams["CHECKSUMHASH"]
+
+if _, ok := paytmParams["CHECKSUMHASH"]; ok {
+	delete(paytmParams, "CHECKSUMHASH")
+}
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+isVerifySignature := PaytmChecksum.VerifySignature(paytmParams, "YOUR_MERCHANT_KEY", paytmChecksum)
+
+if isVerifySignature {
+	fmt.Println("Checksum Matched")
+} else {
+	fmt.Println("Checksum Mismatched")
+}
+
+### PRE after Python
+<dependency>
+    <groupId>com.paytm.pg</groupId>
+    <artifactId>paytm-checksum</artifactId>
+    <version>1.2.1</version>
+</dependency>
+-----
+"dependencies": {
+    ...
+    "paytmchecksum": "^1.5.0"
+    ...
+}
+-----
+"require": {
+    ...
+    "paytm/paytmchecksum": "*"
+    ...
+}
+-----
+"autoload": {
+    "psr-4": {
+    "paytm\\paytmchecksum\\": "paytmchecksum/"
+    }
+} 
+-----
+require_once('vendor/autoload.php');
+use paytm\checksum\PaytmChecksumLibrary;
+-----
+/* import checksum generation utility */
+import com.paytm.pg.merchant.*;
+
+/* initialize JSON String */
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+
+/**
+ * Generate checksum by parameters we have in the body
+ * Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+ */
+
+paytmChecksum = PaytmChecksum.generateSignature(body, "YOUR_MERCHANT_KEY");
+System.out.println("generateSignature Returns: " + paytmChecksum);
+-----
+/* import checksum generation utility */
+const PaytmChecksum = require("./PaytmChecksum");
+
+/* string we need to verify against checksum */
+
+var body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* checksum that we need to verify */
+var paytmChecksum = "CHECKSUM_VALUE";
+
+var isVerifySignature = PaytmChecksum.verifySignature(body, config.PAYTM_MERCHANT_KEY, paytmChecksum);
+if (isVerifySignature) {
+	console.log("Checksum Matched");
+} else {
+	console.log("Checksum Mismatched");
+}
+-----
+/* import checksum generation utility */
+require_once("PaytmChecksum.php");
+
+/* string we need to verify against checksum */  
+
+$body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* checksum that we need to verify */
+$paytmChecksum = "CHECKSUM_VALUE";
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+$isVerifySignature = PaytmChecksum::verifySignature($body, 'YOUR_MERCHANT_KEY', $paytmChecksum);
+if($isVerifySignature) {
+	echo "Checksum Matched";
+} else {
+	echo "Checksum Mismatched";
+}
+-----
+# import checksum generation utility
+import PaytmChecksum 
+
+# string we need to verify against checksum
+
+body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+#checksum that we need to verify
+paytmChecksum = "CHECKSUM_VALUE"
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+
+isVerifySignature = PaytmChecksum.verifySignature(body, "YOUR_MERCHANT_KEY", paytmChecksum)
+if isVerifySignature:
+	print("Checksum Matched")
+else:
+	print("Checksum Mismatched")
+-----
+/* string we need to verify against checksum */
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* checksum that we need to verify */
+string paytmChecksum = "CHECKSUM_VALUE";
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+bool isVerifySignature = Paytm.Checksum.verifySignature(paytmParams, "YOUR_MERCHANT_KEY", paytmChecksum);
+if (isVerifySignature) {
+	Response.Write("Checksum Matched");
+} else {
+	Response.Write("Checksum Mismatched");
+}
+
+-----
+# import checksum generation utility
+require './PaytmChecksum.rb'
+
+# string we need to verify against checksum
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+# checksum that we need to verify
+paytmChecksum = "CHECKSUM_VALUE"
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+
+isVerifySignature = PaytmChecksum.new.verifySignature(request.request_parameters, "YOUR_MERCHANT_KEY", paytmChecksum)
+if isVerifySignature
+	puts "Checksum Matched"
+else
+	puts "Checksum Mismatched"
+-----
+#!/usr/bin/perl 
+# import checksum generation utility
+use PaytmChecksum;
+
+# string we need to verify against checksum
+$body = "{"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}";
+# YOUR_COMPLETE_REQUEST_BODY_HERE
+
+# checksum that we need to verify
+$paytmChecksum = "CHECKSUM_VALUE";
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+
+my $isVerifySignature = PaytmChecksum::verifySignature($paytmParams, "YOUR_MERCHANT_KEY", $paytmchecksum);
+
+if($isVerifySignature){
+	printf("Checksum Matched");
+}else{
+	printf("Checksum Mismatched");
+}
+-----
+/* import checksum generation utility */
+import ("./paytm")
+
+/* string we need to verify against checksum */
+
+body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* checksum that we need to verify */
+paytmChecksum := "CHECKSUM_VALUE";
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+isVerifySignature := PaytmChecksum.VerifySignature(paytmParams, "YOUR_MERCHANT_KEY", paytmChecksum)
+if isVerifySignature {
+	fmt.Println("Checksum Matched")
+} else {
+	fmt.Println("Checksum Mismatched")
+}
+-----
+/* import checksum generation utility */
+import com.paytm.pg.merchant.*;
+
+/* initialize an hash */
+TreeMap<String, String> paytmParams = new TreeMap<String, String>();
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+paytmParams.put("MID", "YOUR_MID_HERE");
+paytmParams.put("ORDERID", "YOUR_ORDERID_HERE");
+/**
+ * Generate checksum by parameters we have
+ * Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+ */
+String paytmChecksum = PaytmChecksum.generateSignature(paytmParams, "YOUR_MERCHANT_KEY");
+System.out.println("generateSignature Returns: " + paytmChecksum);
+-----
+/* import checksum generation utility */
+const PaytmChecksum = require("./PaytmChecksum");
+
+var paytmParams = {};
+
+/* initialize an array */
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+paytmParams["MID"] = "YOUR_MID_HERE";
+paytmParams["ORDERID"] = "YOUR_ORDER_ID_HERE";
+
+/**
+* Generate checksum by parameters we have
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+var paytmChecksum = PaytmChecksum.generateSignature(paytmParams, "YOUR_MERCHANT_KEY");
+paytmChecksum.then(function(checksum){
+	console.log("generateSignature Returns: " + checksum);
+}).catch(function(error){
+	console.log(error);
+});
+-----
+/* import checksum generation utility */
+require_once("./PaytmChecksum.php");
+
+/* initialize an array */
+$paytmParams = array();
+
+/* add parameters in Array */
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+$paytmParams["MID"] = "YOUR_MID_HERE";
+$paytmParams["ORDERID"] = "YOUR_ORDERID_HERE";
+
+/**
+* Generate checksum by parameters we have
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+$paytmChecksum = PaytmChecksum::generateSignature($paytmParams, 'YOUR_MERCHANT_KEY');
+echo sprintf("generateSignature Returns: %s\n", $paytmChecksum);
+-----
+# import checksum generation utility
+import PaytmChecksum
+
+# initialize a Hash/Array
+paytmParams = {}
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\
+paytmParams["MID"] = "YOUR_MID_HERE"
+paytmParams["ORDERID"] = "YOUR_ORDER_ID_HERE"
+
+# Generate checksum by parameters we have
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+paytmChecksum = PaytmChecksum.generateSignature(paytmParams, "YOUR_MERCHANT_KEY")
+print("generateSignature Returns:" + str(paytmChecksum))
+-----
+/* initialize an array */
+Dictionary<string, string> paytmParams = new Dictionary<string, string>();
+
+/* add parameters in Array */
+paytmParams.Add("MID", "YOUR_MID_HERE");
+paytmParams.Add("ORDER_ID", "YOUR_ORDER_ID_HERE");
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+
+/**
+* Generate checksum by parameters we have
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+String paytmChecksum = Paytm.Checksum.generateSignature(paytmParams, "YOUR_MERCHANT_KEY");
+Response.Write("generateSignature Returns: " + paytmChecksum);
+-----
+# import checksum generation utility
+require './PaytmChecksum.rb'
+
+# initialize an array
+paytmParams = Hash.new
+
+paytmParams["MID"] = "YOUR_MID_HERE"
+paytmParams["ORDERID"] = "YOUR_ORDER_ID_HERE"
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\
+
+# Generate checksum by parameters we have
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+
+paytmChecksum = PaytmChecksum.new.generateSignature(paytmParams, "YOUR_MERCHANT_KEY")
+puts "generateSignature Returns: %s\n" %[paytmChecksum]
+-----
+#!/usr/bin/perl 
+
+# import checksum generation utility
+use PaytmChecksum;
+
+# initialize an hash
+my $paytmParams = {
+            "MID" => "YOUR_MID_HERE",
+            "ORDER_ID" => "YOUR_ORDER_ID_HERE"
+            };
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\
+# Generate checksum by parameters we have
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+my $paytmChecksum = PaytmChecksum::generateSignature($paytmParams,'YOUR_MERCHANT_KEY');
+printf("generateSignature Returns: %s\n", $paytmChecksum);
+-----
+/* import checksum generation utility */
+import ("./paytm")
+
+/* initialize an map */	
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+paytmParams := make(map[string]string)
+
+paytmParams = map[string]string{
+	"MID": "YOUR_MID_HERE",
+	"ORDER_ID": "YOUR_ORDER_ID_HERE",
+}
+
+/**
+* Generate checksum by parameters we have
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+paytmChecksum := PaytmChecksum.GenerateSignature(paytmParams, "YOUR_MERCHANT_KEY")
+fmt.Printf("generateSignature Returns: %s\n", paytmChecksum)
+-----
+/* import checksum generation utility */
+import com.paytm.pg.merchant.*; 
+
+/* string we need to verify against checksum */
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* checksum that we need to verify */
+String paytmChecksum = "CHECKSUM_VALUE";
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For example: \mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\*/
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+boolean isVerifySignature = PaytmChecksum.verifySignature(body, "YOUR_MERCHANT_KEY", paytmChecksum);
+if (isVerifySignature) {
+	System.out.append("Checksum Matched");
+} else {
+	System.out.append("Checksum Mismatched");
+}
+-----
+/* string we need to verify against checksum */
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* checksum that we need to verify */
+string paytmChecksum = "CHECKSUM_VALUE";
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+bool isVerifySignature = Paytm.Checksum.verifySignature(paytmParams, "YOUR_MERCHANT_KEY", paytmChecksum);
+if (isVerifySignature) {
+	Response.Write("Checksum Matched");
+} else {
+	Response.Write("Checksum Mismatched");
+}
+-----
+# import checksum generation utility
+require './PaytmChecksum.rb'
+
+# string we need to verify against checksum
+
+body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+# checksum that we need to verify
+paytmChecksum = "CHECKSUM_VALUE"
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+
+isVerifySignature = PaytmChecksum.new.verifySignature(request.request_parameters, "YOUR_MERCHANT_KEY", paytmChecksum)
+if isVerifySignature
+	puts "Checksum Matched"
+else
+	puts "Checksum Mismatched"
+-----
+#!/usr/bin/perl 
+# import checksum generation utility
+use PaytmChecksum;
+
+# string we need to verify against checksum
+
+$body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+# checksum that we need to verify
+$paytmChecksum = "CHECKSUM_VALUE";
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+
+my $isVerifySignature = PaytmChecksum::verifySignature($paytmParams, "YOUR_MERCHANT_KEY", $paytmchecksum);
+
+if($isVerifySignature){
+	printf("Checksum Matched");
+}else{
+	printf("Checksum Mismatched");
+}
+-----
+/* import checksum generation utility */
+import com.paytm.pg.merchant.*;
+
+String paytmChecksum = null;
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/* Create a TreeMap from the parameters received in POST */
+TreeMap<String, String> paytmParams = new TreeMap<String, String>();
+for (Entry<String, String[]> requestParamsEntry : request.getParameterMap().entrySet()) {
+    if ("CHECKSUMHASH".equalsIgnoreCase(requestParamsEntry.getKey())){
+        paytmChecksum = requestParamsEntry.getValue()[0];
+    } else {
+        paytmParams.put(requestParamsEntry.getKey(), requestParamsEntry.getValue()[0]);
+    }
+}
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+boolean isVerifySignature = PaytmChecksum.verifySignature(paytmParams, "YOUR_MERCHANT_KEY", paytmChecksum);
+if (isVerifySignature) {
+	System.out.append("Checksum Matched");
+} else {
+	System.out.append("Checksum Mismatched");
+}
+-----
+/* import checksum generation utility */
+const PaytmChecksum = require("./PaytmChecksum");
+
+paytmChecksum = request.body.CHECKSUMHASH;
+delete request.body.CHECKSUMHASH;
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+var isVerifySignature = PaytmChecksum.verifySignature(request.body, config.PAYTM_MERCHANT_KEY, paytmChecksum);
+if (isVerifySignature) {
+	console.log("Checksum Matched");
+} else {
+	console.log("Checksum Mismatched");
+}
+-----
+/* import checksum generation utility */
+require_once("PaytmChecksum.php");
+
+$paytmParams = $_POST;
+
+$paytmChecksum = $_POST['paytmChecksum'];
+unset($paytmParams['paytmChecksum']);
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+$isVerifySignature = PaytmChecksum::verifySignature($paytmParams, 'YOUR_MERCHANT_KEY', $paytmChecksum);
+if($isVerifySignature) {
+	echo "Checksum Matched";
+} else {
+	echo "Checksum Mismatched";
+}
+-----
+# import checksum generation utility
+import PaytmChecksum
+
+paytmParams = dict()
+paytmParams = request.form.to_dict()
+paytmChecksum = paytmChecksum
+paytmChecksum = paytmParams['CHECKSUMHASH']
+paytmParams.pop('CHECKSUMHASH', None)
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+isVerifySignature = PaytmChecksum.verifySignature(paytmParams, "YOUR_MERCHANT_KEY",paytmChecksum)
+if isVerifySignature:
+	print("Checksum Matched")
+else:
+	print("Checksum Mismatched")
+-----
+String paytmChecksum = "";
+
+/* Create a Dictionary from the parameters received in POST */
+Dictionary<String, String> paytmParams = new Dictionary<String, String>();
+
+foreach (string key in Request.Form.Keys) {
+	if (key.Equals("CHECKSUMHASH")) {
+            paytmChecksum = Request.Form[key];
+        } else {
+            paytmParams.Add(key.Trim(), Request.Form[key].Trim());
+	}
+}
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+/*For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}*/
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+bool isVerifySignature = Paytm.Checksum.verifySignature(paytmParams, "YOUR_MERCHANT_KEY", paytmChecksum);
+if (isVerifySignature) {
+	Response.Write("Checksum Matched");
+} else {
+	Response.Write("Checksum Mismatched");
+}
+-----
+# import checksum generation utility
+require './PaytmChecksum.rb'
+
+paytmChecksum = request.request_parameters['CHECKSUMHASH']
+request.request_parameters.delete(:CHECKSUMHASH)
+
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys
+
+isVerifySignature = PaytmChecksum.new.verifySignature(request.request_parameters, "YOUR_MERCHANT_KEY", paytmChecksum)
+if isVerifySignature
+	puts "Checksum Matched"
+else
+	puts "Checksum Mismatched"
+-----
+#!/usr/bin/perl 
+
+# import checksum generation utility
+use PaytmChecksum; 
+
+my $paytmParams = params;
+my $paytmchecksum= $paytmParams->{CHECKSUMHASH};
+delete $paytmParams->{'CHECKSUMHASH'};
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+# Verify checksum
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+
+my $isVerifySignature = PaytmChecksum::verifySignature($paytmParams, "YOUR_MERCHANT_KEY", $paytmchecksum);
+
+if($isVerifySignature){
+	printf("Checksum Matched");
+}else{
+	printf("Checksum Mismatched");
+}
+-----
+/* import checksum generation utility */
+import ("./paytm")
+
+/* r := *http.Request */
+r.ParseForm()
+
+paytmParams := r.Form
+paytmChecksum := paytmParams["CHECKSUMHASH"]
+
+if _, ok := paytmParams["CHECKSUMHASH"]; ok {
+	delete(paytmParams, "CHECKSUMHASH")
+}
+
+String body = "{/*YOUR_COMPLETE_REQUEST_BODY_HERE*/}";
+# For Example: {"\mid\":"\YOUR_MID_HERE\","\orderId\":"\YOUR_ORDER_ID_HERE\"}
+
+/**
+* Verify checksum
+* Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+*/
+isVerifySignature := PaytmChecksum.VerifySignature(paytmParams, "YOUR_MERCHANT_KEY", paytmChecksum)
+
+if isVerifySignature {
+	fmt.Println("Checksum Matched")
+} else {
+	fmt.Println("Checksum Mismatched")
+}

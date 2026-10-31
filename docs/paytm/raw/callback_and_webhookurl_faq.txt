@@ -1,0 +1,38 @@
+### MAIN TEXT
+Callback and Webhook URL FAQs
+
+Please refer to the frequently asked questions related to Callback and Webhook URL and its integration.
+
+ 
+
+What is callback URL?
+-
+
+After successful/failed transaction, payment gateway posts the transaction response on call back URL.
+
+I am not getting any response on configured webhook, what should I do?
++
+Will I get the response on callback URL in real time?
++
+How do I configure the webhook url against my MID.
++
+I am receiving multiple notifications for the same transaction. Why is it so?
++
+Is it possible to have the same callback URL for WEB and WAP (App)?
++
+Can we configure different callback URL for successful and failed transaction?
++
+Are callback and webhook URLs same?
++
+Callback data will be received in which format?
++
+Webhook data will be received in which format?
++
+Do I need to verify the checksum while receiving the callback?
++
+Do I need to verify the checksum while receiving the Webhook?
++
+Note: In case of queries on any other solution, please refer to the FAQs page.
+
+### PRE after load
+

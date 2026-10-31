@@ -1,0 +1,433 @@
+### MAIN TEXT
+POST
+Fetch Transaction API
+Use Case
+
+Fetch Transaction API would be used to fetch the transactions against a link.
+
+Request Attributes
+Content Type : JSON
+Head
+ATTRIBUTE	DESCRIPTION
+
+timestamp
+string(15)
+optional
+	
+
+EPOCH timestamp of the time at which request is being sent.
+Example: 1588402269
+
+
+
+clientId
+string(3)
+optional
+	
+
+Paytm use the merchant key on the basis of clientId parameter value. It requires only if the merchant has more than one key.
+
+Example: C11
+
+
+
+version
+string(4)
+optional
+	
+
+Version of the API.
+
+Example: v2
+
+Note:Use v2 api if you want to fetch details for EMI subvention, Bank offers and Customer details.
+
+
+channelId
+string(3)
+optional
+	
+
+The parameter value identifies the Channel for which API call is initiated.
+
+Possible values: WEB , WAP
+
+
+tokenType
+string
+mandatory
+	
+
+This parameter identifies whether the API works on checksum authentication. The value to be sent in tokenType is 'AES' for this API.
+
+
+
+signature
+string
+mandatory
+	
+
+Paytm validates the request and ensures that parameters are not tempered by verifying the signature in the request. For creating the checksum (signature) refer to the steps given in Checksum Logic.
+Note: Create the signature using the body parameter of the request.
+
+Body
+ATTRIBUTE	DESCRIPTION
+
+mid
+string(20)
+mandatory
+	
+
+Paytm provides MID as a unique identifier to each merchant. For your staging MID, click here. You get the production MID post the account activation.
+
+Example: INTEGR7769XXXXXX9383
+
+
+
+linkId
+long
+mandatory
+	
+
+Unique Identifier for each Link
+
+
+
+pageNo
+int
+optional
+	
+
+Page Number
+
+
+
+pageSize
+int
+optional
+	
+
+Page Size = Total Links/Total no. of Pages
+
+
+
+searchStartDate
+string
+optional
+	
+
+From Date
+
+
+
+searchEndDate
+string
+optional
+	
+
+To Date
+
+
+
+fetchAllTxns
+boolean
+optional
+	
+
+Fetch all transaction done on the link (i.e. success, failed and pending).
+Possible values: true, false
+
+Response Attributes
+Content Type : JSON
+Head
+ATTRIBUTE	DESCRIPTION
+
+timestamp
+string(15)
+	
+
+EPOCH timestamp of the time at which response is being sent.
+Example: 1588402269
+
+
+
+clientId
+string(3)
+	
+
+Paytm use the merchant key on the basis of clientId parameter value. It requires only if the merchant has more than one key.
+
+Example: C11
+
+
+
+version
+string(2)
+	
+
+Version of the API passed in the request.
+Example: v1
+
+
+
+channelId
+string(3)
+	
+
+The parameter value identifies the Channel for which API call is initiated.
+
+Possible values: WEB , WAP
+
+
+tokenType
+string
+	
+
+This parameter identifies whether the API works on checksum authentication. The value to be sent in tokenType is 'AES' for this API.
+
+
+
+signature
+string(108)
+	
+
+Paytm validates the request and ensures that parameters are not tempered by verifying the signature in the request. For creating the checksum (signature) refer to the steps given in Checksum Logic.
+Note: Create the signature using the body parameter of the request.
+
+Body
+ATTRIBUTE	DESCRIPTION
+
+resultInfo
+object
+	
+
+This parameter gives the information about the result of the API response
+
+
+
+ResultInfo+
+
+
+orders
+object
+	
+
+Order Details
+
+
+
+Orders+
+
+
+merchantId
+string
+	
+
+Unique Identifier for Merchant
+
+
+
+merchantName
+string
+	
+
+Merchant Name
+
+
+
+validateAccountNumber
+string
+	
+
+Flag signifies whether to match user's registered account number to the one which is being used for the payment.
+
+
+
+allowUnverifiedAccount
+string
+	
+
+Flag signifies if a transaction should proceed even if account number mismatched
+
+
+
+accountNumber
+string
+	
+
+User account number to validate.
+
+
+
+additionalInfo
+string
+	
+
+Map for any extra information in form of key value pair.
+
+
+
+transactionType
+string
+	
+
+Transaction type of the payment.
+
+
+
+merchantLinkRefId
+string
+	
+
+Merchant reference ID
+
+
+
+customerId
+string
+	
+
+Customer ID
+
+
+
+customerContact
+Object
+	
+
+Customer related information passed during link creation
+
+
+
+customerContact+
+Response Codes & Messages
+resultCode	resultStatus	resultMessage
+200	SUCCESS	Success
+404	FAILED	Data Not Found
+501	FAILED	Internal Server Error
+502	FAILED	Unknown Error Occurred
+5004	FAILED	empty merchant Id.
+5021	FAILED	Expiry date is invalid.
+5023	FAILED	Merchant Id is invalid.
+5028	FAILED	Checksum provided is invalid.
+5029	FAILED	request body cannot be empty
+5030	FAILED	request head cannot be empty
+⇾
+Staging
+Production
+https://securestage.paytmpayments.com/link/fetchTransaction
+REQUEST
+RESPONSE
+CURL
+JAVA
+NODE
+PHP
+PYTHON
+DOTNET
+curl -X POST 'https://securestage.paytmpayments.com/link/fetchTransaction' \
+--header 'Content-Type: application/json' \
+--data '{"body":{"mid":"{mid}","linkId":"31309"},"head":{"tokenType":"AES","signature":"{signature}"}}'
+
+
+
+
+### PRE after load
+curl -X POST 'https://securestage.paytmpayments.com/link/fetchTransaction' \
+--header 'Content-Type: application/json' \
+--data '{"body":{"mid":"{mid}","linkId":"31309"},"head":{"tokenType":"AES","signature":"{signature}"}}'
+
+
+
+-----
+curl -X POST 'https://securestage.paytmpayments.com/link/fetchTransaction' \
+--header 'Content-Type: application/json' \
+--data '{"body":{"mid":"{mid}","linkId":"31309"},"head":{"tokenType":"AES","signature":"{signature}"}}'
+
+
+### PRE after RESPONSE
+curl -X POST 'https://securestage.paytmpayments.com/link/fetchTransaction' \
+--header 'Content-Type: application/json' \
+--data '{"body":{"mid":"{mid}","linkId":"31309"},"head":{"tokenType":"AES","signature":"{signature}"}}'
+
+
+
+-----
+curl -X POST 'https://securestage.paytmpayments.com/link/fetchTransaction' \
+--header 'Content-Type: application/json' \
+--data '{"body":{"mid":"{mid}","linkId":"31309"},"head":{"tokenType":"AES","signature":"{signature}"}}'
+
+
+### PRE after PYTHON
+import requests
+import json
+
+# import checksum generation utility
+# You can get this utility from https://paytmpayments.com/docs/checksum/
+import PaytmChecksum
+
+paytmParams = dict()
+
+# body parameters
+paytmParams["body"] = {
+    "mid"       : "YOUR_MID_HERE",
+    "linkId"    : "31309",
+}
+
+# Generate checksum by parameters we have in body
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+checksum = PaytmChecksum.generateSignature(json.dumps(paytmParams["body"]), "YOUR_MERCHANT_KEY")
+
+paytmParams["head"] = {
+    "tokenType" : "AES",
+    "signature" : checksum
+}
+
+post_data = json.dumps(paytmParams)
+
+# for Staging
+url = "https://securestage.paytmpayments.com/link/fetchTransaction"
+
+# for Production
+# url = "https://secure.paytmpayments.com/link/fetchTransaction"
+
+response = requests.post(url, data = post_data, headers = {"Content-type": "application/json"}).json()
+print(response)
+
+
+
+-----
+import requests
+import json
+
+# import checksum generation utility
+# You can get this utility from https://paytmpayments.com/docs/checksum/
+import PaytmChecksum
+
+paytmParams = dict()
+
+# body parameters
+paytmParams["body"] = {
+    "mid"       : "YOUR_MID_HERE",
+    "linkId"    : "31309",
+}
+
+# Generate checksum by parameters we have in body
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+checksum = PaytmChecksum.generateSignature(json.dumps(paytmParams["body"]), "YOUR_MERCHANT_KEY")
+
+paytmParams["head"] = {
+    "tokenType" : "AES",
+    "signature" : checksum
+}
+
+post_data = json.dumps(paytmParams)
+
+# for Staging
+url = "https://securestage.paytmpayments.com/link/fetchTransaction"
+
+# for Production
+# url = "https://secure.paytmpayments.com/link/fetchTransaction"
+
+response = requests.post(url, data = post_data, headers = {"Content-type": "application/json"}).json()
+print(response)
+

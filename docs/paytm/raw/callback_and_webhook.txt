@@ -1,0 +1,64 @@
+### MAIN TEXT
+Callback and Webhook URL
+
+Callback URL and webhook are used to get the status of the transaction for a payment source.
+
+Callback URL
+
+Paytm sends the response of the transaction on the callback url sent by the merchant. The response of the transaction in the callback URL can be intermediate or final status. The URL in the format "https://<domain_name_callback_url>" can be sent in request parameter callbackUrl of the relevant API as per the use case.
+
+ 
+
+In case of android/iOS SDK integration, you have the option to send the following callback URL. On completion of the transaction, Paytm payment gateway will send the response on this URL.
+
+Staging Environment: https://securestage.paytmpayments.com/theia/paytmCallback?ORDER_ID=<order_id>
+Production Environment: https://secure.paytmpayments.com/theia/paytmCallback?ORDER_ID=<order_id>
+Webhook URL
+
+Webhooks are the user specified HTTP callbacks that get triggered by some event reactions and used to connect two applications. It’s a way to send response payload from Paytm server to a unique URL configured at Paytm’s end to notify the final status of transaction, refund, etc. Unlike an API, where you need to poll the data frequently to get the real time information, it lets you receive the automated, instant, real-time data from Paytm server to your server on occurence of a given event.
+
+ 
+
+To consume a webhook, initially you must configure a URL at Paytm’s end that is accessible from the public web, the URL should be capable of handling the updated event/response sent by Paytm. It provides the mechanism to Paytm Payment gateway to notify your customer on the URL provided by them about an occurrence outside the flow.
+
+Note: Currently the webhook URLs only allow port number 443
+
+You can get the response on Callback URL and on webhook URL as events notifications.
+
+Payment status (For one time payment)
+Subscription Status (For subscription payments)
+Link Payment Status (For payments done through links)
+
+In addition, you can configure separate webhooks URLs for the following events notifications.
+
+Accept Refund (For refund amount deduction from merchant's settlement amount)
+Success Refund(For successful submission of refund to the bank)
+Subscription Pre-Notify (For subscription notification sent to the user)
+Dispute Status (For successful submission of a chargeback)
+Card Expiry Notification(For customer card expiry notification)
+Downtime Notification (For unplanned or planned downtime of a payment option)
+Webhook Configuration
+
+You can configure the following webhook URL from the merchant dashboard panel:
+
+Payment Status
+Refund Notification URL
+Refund Initiate
+Charge Back Notify
+Subscription Pre notify
+
+ 
+
+You can get in touch with us to configure the following webhook URL:
+
+Subscription Status
+Link Payment Status
+Card Expiry Notification
+Downtime Notification
+
+ 
+
+ 
+
+### PRE after load
+

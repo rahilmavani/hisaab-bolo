@@ -1,0 +1,37 @@
+[project]
+name = "hisaab-api"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=2.3.0",
+    "fastapi>=0.162.0",
+    "httpx>=0.28.1",
+    "paytmchecksum>=1.7.0",
+    "psycopg[binary,pool]>=3.3.6",
+    "pycryptodome>=4.2.0",
+    "pydantic-settings>=2.16.2",
+    "pydantic[email]>=2.14.2",
+    "pyjwt[crypto]>=2.15.1",
+    "python-multipart>=0.0.32",
+    "qrcode[pil]>=8.2",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.4.1",
+    "respx>=0.23.1",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "staging: contract tests against real Paytm staging (need PAYTM_MID and PAYTM_MERCHANT_KEY)",
+    "live: tests that call real third-party APIs (Anthropic, Sarvam, Resend)",
+]
+addopts = "-m 'not staging and not live'"

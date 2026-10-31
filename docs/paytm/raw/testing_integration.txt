@@ -1,0 +1,20 @@
+### MAIN TEXT
+Payment Gateway - Test Instruments
+
+This page explains the test instrument details which you can use to attempt a transaction on the staging environment. For card and netbanking transactions, you will be redirected to a Paytm maintained page. Here you will have an option to make the transaction successful or failed. This is to provide a comprehensive integration experience.
+
+ 
+
+Test Card Details
+Test Wallet Details
+Net Banking
+UPI
+  
+	 
+Card Number	Any Visa or Master Card
+Expiration Month & Year	Any Future month and Year
+CVV	123
+Note: In case you are testing on production environment, use live paymode details to complete the transaction. Once the transaction is successful, you can initiate refund from the dashboard.
+
+### PRE after load
+

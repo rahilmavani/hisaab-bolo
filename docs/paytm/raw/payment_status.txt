@@ -1,0 +1,396 @@
+### MAIN TEXT
+Payment Status
+
+Paytm sends a server to server (S2S) response in key value pairs on the webhook configured and on callback URL. Payment Success Webhook response is sent for the final transaction status i.e. success or failed.
+
+ 
+
+You can configure the webhook for Payment Status in most of the usecases from the merchant dashboard.
+
+ 
+
+The sample response of different payment sources are mentioned below.
+
+Wallet
+Postpaid
+Saved Card
+New card
+Net Banking
+EMI
+UPI Collect
+Large Payment
+International Card
+
+Success
+
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[PAYMENTMODE] => PPI
+[CURRENCY] => INR
+[TXNDATE] => 2020-07-24 15:13:02.0
+[STATUS] => TXN_SUCCESS
+[RESPCODE] => 01
+[RESPMSG] => Txn Success
+[GATEWAYNAME] => WALLET
+[BANKTXNID] => 62909899
+[BANKNAME] => WALLET
+[CHECKSUMHASH] => y5Tn02QKOQdhyYKK+uHHgNIIZOjC/xPf4jSPQRBNSrcP6DR3ejFuQ4+kQi0a8KX2txJCnQkTnUxtJhM6jImU8FU+E1GlSSK5VjMLsSm/R6w=
+
+Failure
+
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[PAYMENTMODE] => PPI
+[CURRENCY] => INR
+[TXNDATE] => 2020-07-24 15:13:02.0
+[STATUS] => TXN_FAILURE
+[RESPCODE] => 227
+[RESPMSG] => Your payment has been declined by your bank. Please try again or use a different method to complete the payment.
+[GATEWAYNAME] => WALLET
+[BANKTXNID] => 62909899
+[BANKNAME] => WALLET
+[CHECKSUMHASH] => y5Tn02QKOQdhyYKK+uHHgNIIZOjC/xPf4jSPQRBNSrcP6DR3ejFuQ4+kQi0a8KX2txJCnQkTnUxtJhM6jImU8FU+E1GlSSK5VjMLsSm/R6w=
+
+Note: All the response codes of the transaction are available here.
+
+The parameters are briefly described below.
+
+Response Attributes
+ATTRIBUTE	DESCRIPTION
+ORDERID	OrderId passed in the request
+Example:OREDRID_98765
+MID	Merchant ID passed in the request
+Example: INTEGR7769XXXXXX9383
+TXNID	Unique reference number generated at paytm side for each transaction
+Example: 202005081112128XXXXXX68470101509706
+TXNAMOUNT	Payment transaction Amount
+Example: 1.00
+CURRENCY	Payment currency type
+Example:INR
+PAYMENTMODE	Payment Mode used in payment
+Example: PPI
+TXNDATE	Transaction Date
+Example: 7/24/2020 15:13:02
+STATUS	This parameter indicates the status of API call.
+Example: TXN_SUCCESS
+RESPCODE	This is the resultCode corresponding to a particular message and is returned to the merchant. It's maximum length is 64. For list of different RESPCODE and RESPMSG please refer to the PDF.
+Example: 01
+RESPMSG	This parameter is the result message which contains information about the result.
+Example: Txn Success
+GATEWAYNAME	Name of the gateway used to process the transaction. In case of Super Router, this is the payment aggregator chosen to process the transaction.
+GATEWAYINFO	Response provided by the gateway during payment or transaction. This is available for Super Router product only
+BANKTXNID	Unique reference number generated at bank side for each transaction
+Example: 62909899
+BANKNAME	Bank Name used in payment
+Example: WALLET
+CHECKSUMHASH	Paytm validates the parameter values by verifying the signature comes in the request. It ensures that parameter values are not tempered. Signature string can be created by using Paytm checksum library.
+Example:
+y5Tn02QKOQdhyYKK+uHHgNIIZOjC/XXXXjSPQRBNSrcP6DR3ejFuQ4+kQi0a8KX2txJCnQkTnUxtJhM6jImU8FU+E1GlSSK5VjMLsSm/R6w=
+
+### PRE after load
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[PAYMENTMODE] => PPI
+[CURRENCY] => INR
+[TXNDATE] => 2020-07-24 15:13:02.0
+[STATUS] => TXN_SUCCESS
+[RESPCODE] => 01
+[RESPMSG] => Txn Success
+[GATEWAYNAME] => WALLET
+[BANKTXNID] => 62909899
+[BANKNAME] => WALLET
+[CHECKSUMHASH] => y5Tn02QKOQdhyYKK+uHHgNIIZOjC/xPf4jSPQRBNSrcP6DR3ejFuQ4+kQi0a8KX2txJCnQkTnUxtJhM6jImU8FU+E1GlSSK5VjMLsSm/R6w=
+-----
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[PAYMENTMODE] => PPI
+[CURRENCY] => INR
+[TXNDATE] => 2020-07-24 15:13:02.0
+[STATUS] => TXN_FAILURE
+[RESPCODE] => 227
+[RESPMSG] => Your payment has been declined by your bank. Please try again or use a different method to complete the payment.
+[GATEWAYNAME] => WALLET
+[BANKTXNID] => 62909899
+[BANKNAME] => WALLET
+[CHECKSUMHASH] => y5Tn02QKOQdhyYKK+uHHgNIIZOjC/xPf4jSPQRBNSrcP6DR3ejFuQ4+kQi0a8KX2txJCnQkTnUxtJhM6jImU8FU+E1GlSSK5VjMLsSm/R6w=
+-----
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[PAYMENTMODE] => Paytm Postpaid
+[CURRENCY] => INR
+[TXNDATE] => 2020-08-19 11:41:18.0
+[STATUS] => TXN_SUCCESS
+[RESPCODE] => 01
+[RESPMSG] => Txn Success
+[GATEWAYNAME] => PAYTMCC
+[BANKTXNID] => 14120200819119258216
+[BANKNAME] => PAYTMCC
+[CHECKSUMHASH] => AeYn/Pfqt9xLBCsoTpOmpB0jM7Rx6kXS217D+3kAJR2DG9Ay/abk6qoQLJoH3dAyvMUEEDxqQquYGHmgkjCLZ86TX40Bv1QH7dvLdgjBzbE=
+-----
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[PAYMENTMODE] => Paytm Postpaid
+[CURRENCY] => INR
+[TXNDATE] => 2020-08-19 11:41:18.0
+[STATUS] => TXN_FAILURE
+[RESPCODE] => 810
+[RESPMSG] => Payment failed due to a technical error. Please try after some time.
+[GATEWAYNAME] => PAYTMCC
+[BANKTXNID] => 14120200819119258216
+[BANKNAME] => PAYTMCC
+[CHECKSUMHASH] => AeYn/Pfqt9xLBCsoTpOmpB0jM7Rx6kXS217D+3kAJR2DG9Ay/abk6qoQLJoH3dAyvMUEEDxqQquYGHmgkjCLZ86TX40Bv1QH7dvLdgjBzbE=
+-----
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[PAYMENTMODE] => CC
+[CURRENCY] => INR
+[TXNDATE] => 2020-07-24 15:35:33.0
+[STATUS] => TXN_SUCCESS
+[RESPCODE] => 01
+[RESPMSG] => Txn Success
+[GATEWAYNAME] => HDFC
+[BANKTXNID] => 777001087423130
+[BANKNAME] => JPMorgan Chase Bank
+[CHECKSUMHASH] => wHY+0+UVBpJBJeKw1TdPM7QwK1VLnGLKoMJA+lPn2pLxpEnMJt4CJuQETpKB/j49h8FG+1CMGRy1ozqemcN46Q2c/W0lPBPUSFCMApckKfU=
+-----
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[PAYMENTMODE] => CC
+[CURRENCY] => INR
+[TXNDATE] => 2020-09-02 16:37:17.0
+[STATUS] => TXN_FAILURE
+[RESPCODE] => 227
+[RESPMSG] => Your payment has been declined by your bank. Please try again or use a different method to complete the payment.
+[GATEWAYNAME] => HDFC
+[BANKTXNID] => 777001233456842
+[BANKNAME] => JPMorgan Chase Bank
+[CHECKSUMHASH] => WGq1tMZeeGSh8OqjMcbcjOmMg53riM6k9Via1iXdRApc6zYCabjB62l9LHOs4v+OKwDCHdHQX/8MqEdM0ajfISevjSTJA2SXc8/D+XXPN5U=
+-----
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[PAYMENTMODE] => DC
+[CURRENCY] => INR
+[TXNDATE] => 2020-07-24 15:23:07.0
+[STATUS] => TXN_SUCCESS
+[RESPCODE] => 01
+[RESPMSG] => Txn Success
+[GATEWAYNAME] => HDFC
+[BANKTXNID] => 777001420411401
+[BANKNAME] => HDFC Bank
+[prepaidCard]:"TRUE"
+[feeRateFactors]:{"corporateCard":"TRUE"}
+[CHECKSUMHASH] => BHL7pZKMchCFxadVbPWvpw9+fLaG8sBfU8ivakR7vKmWq6QYlzxL5N3JeVYY5GHiJo1UCJ8zpE6FiX5G+aaA0AdWjbsR0j4xyXGOjpqO4qY=
+-----
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[PAYMENTMODE] => DC
+[CURRENCY] => INR
+[TXNDATE] => 2020-07-24 15:23:07.0
+[STATUS] => TXN_FAILURE
+[RESPCODE] => 227
+[RESPMSG] => Your payment has been declined by your bank. Please try again or use a different method to complete the payment.
+[GATEWAYNAME] => HDFC
+[BANKTXNID] => 777001420411401
+[BANKNAME] => HDFC Bank
+[prepaidCard]:"TRUE"
+[feeRateFactors]:{"corporateCard":"TRUE"}
+[CHECKSUMHASH] => BHL7pZKMchCFxadVbPWvpw9+fLaG8sBfU8ivakR7vKmWq6QYlzxL5N3JeVYY5GHiJo1UCJ8zpE6FiX5G+aaA0AdWjbsR0j4xyXGOjpqO4qY=
+-----
+[ORDERID] => ORDERID_98765 
+[MID] => INTEGR7769XXXXXX9383 
+[TXNID] => 202005081112128XXXXXX68470101509706 
+[TXNAMOUNT] => 1.00 
+[PAYMENTMODE] => NB 
+[CURRENCY] => INR 
+[TXNDATE] => 2020-07-24 14:53:34.0 
+[STATUS] => TXN_SUCCESS 
+[RESPCODE] => 01 
+[RESPMSG] => Txn Success 
+[GATEWAYNAME] => SBI 
+[BANKTXNID] => 19180340015 
+[BANKNAME] => SBI 
+[CHECKSUMHASH] => cVA9PDcQuRh0IuuERsyaAwC86aV8f4FMnxLuRUckimptc84+30Ropf2Cj3iEp31TyLJQ3RsOqliBtUVTZzROwg07P3RuVM3ul/2nMxrs92c= 
+-----
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[PAYMENTMODE] => NB
+[CURRENCY] => INR
+[TXNDATE] => 2020-09-02 16:36:31.0
+[STATUS] => TXN_FAILURE
+[RESPCODE] => 227
+[RESPMSG] => Your payment has been declined by your bank. Please try again or use a different method to complete the payment.
+[GATEWAYNAME] => SBI
+[BANKTXNID] => 19222179724
+[BANKNAME] => SBI
+[CHECKSUMHASH] => cMSijptLGunvTiRy3W0nJCMBzGpMLHhtnR1BXZYdB0Y5wz/BY1q5MyliyIXma+7YehEFBNqZH9qVHGMqacadQzAq7Vn4yADIZNNBJYe/6Rg=
+-----
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 2000.00
+[PAYMENTMODE] => EMI
+[CURRENCY] => INR
+[TXNDATE] => 2020-07-27 19:43:11.0
+[STATUS] => TXN_SUCCESS
+[RESPCODE] => 01
+[RESPMSG] => Txn Success
+[GATEWAYNAME] => HDFC
+[BANKTXNID] => 777001131568358
+[BANKNAME] => ICICI Bank
+[CHECKSUMHASH] => Goz5cR5ms8yNFRiybuQvUYsp9WcdWqR5MYcjG+qZcBwLPqF2zANfA+5rNDQqcVeYzR1B2dlWdqw63/BxMmn6HpGH2ymqWv5M0Gi0w+JRkkY=
+-----
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 2000.00
+[PAYMENTMODE] => EMI
+[CURRENCY] => INR
+[TXNDATE] => 2020-07-27 19:43:11.0
+[STATUS] => TXN_FAILURE
+[RESPCODE] => 810
+[RESPMSG] => Payment failed due to a technical error. Please try after some time.
+[GATEWAYNAME] => HDFC
+[BANKTXNID] => 777001131568358
+[BANKNAME] => ICICI Bank
+[CHECKSUMHASH] => Goz5cR5ms8yNFRiybuQvUYsp9WcdWqR5MYcjG+qZcBwLPqF2zANfA+5rNDQqcVeYzR1B2dlWdqw63/BxMmn6HpGH2ymqWv5M0Gi0w+JRkkY=
+-----
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[PAYMENTMODE] => UPI
+[CURRENCY] => INR
+[TXNDATE] => 2020-07-28 10:14:55.0
+[STATUS] => TXN_SUCCESS
+[RESPCODE] => 01
+[RESPMSG] => Txn Success
+[GATEWAYNAME] => PPBLC
+[BANKTXNID] => 6877266
+[CHECKSUMHASH] => glEBpHd9yJ5g9ReTNkpjfFsvBEb1aYIdQN1mSCbMVNcn6CGDr3UUf3psseqKGPswoU0Xdl6g9P9Jc6U9Q9Ol/JuwcudfMLRgaUjj2rsAl/8=
+-----
+[ORDERID] => ORDERID_98765
+[MID] => INTEGR7769XXXXXX9383
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[PAYMENTMODE] => UPI
+[CURRENCY] => INR
+[TXNDATE] => 2020-07-28 10:14:55.0
+[STATUS] => TXN_FAILURE
+[RESPCODE] => 810
+[RESPMSG] => Payment failed due to a technical error. Please try after some time.
+[GATEWAYNAME] => PPBLC
+[BANKTXNID] => 6877266
+[CHECKSUMHASH] => glEBpHd9yJ5g9ReTNkpjfFsvBEb1aYIdQN1mSCbMVNcn6CGDr3UUf3psseqKGPswoU0Xdl6g9P9Jc6U9Q9Ol/JuwcudfMLRgaUjj2rsAl/8=
+-----
+[GATEWAYNAME] => PPBL
+[cardScheme] => MAESTRO
+[PAYMENTMODE] => BANK_TRANSFER
+[CUSTID] =>
+[LASTFOURDIGITS] => 1111
+[ORDERID] => PPBL_98765
+[STATUS] => TXN_SUCCESS
+[BANKTXNID] => 153579
+[transferMode] => RTGS
+[TXNDATE] => 2021-04-16
+[bankTransactionDate] => 20210416
+[CHECKSUMHASH] => UZq9+hDHVCC/s+tjJyw+3oDSMCeQki4nxqraIHsP/bP23wh6/X+FRXxz2+tC88+2yVPfpuoybKMkJxbRD7GedqY3e2pLI1t/aBEFXsTNAfw=
+[CURRENCY] => INR
+[clientId] => VC01
+[RESPMSG] => Txn Success
+[BANKNAME] =>
+[BIN] => 411111
+[vanInfo] => {"van":"PYI38XXXXXX62339","beneficiaryName":"One97 Communications Limited","ifscCode":"PYTM0123456","purpose":"Testing only","userDefinedFields":{"udf1":"test1","udf2":"test2","udf3":"test3","udf4":"test4","udf5":"test5"},"customerDetails":[{"customerName":"test user","customerEmail":"testuser@gmail.com","customerMobile":"7777777777"}]}
+[MID] => INTEGR7769XXXXXX9383
+[MERC_UNQ_REF] =>
+[RESPCODE] => 01
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[utr] => 313687707152
+[TXNDATETIME] => 2021-04-16 14:11:58.0
+[accountDetails] => {"maskedAccountNumber":"9181****1266","accountHolderName":"loknath","bankName":"Paytm Payments Bank","ifscCode":"PYTM0123456"}
+-----
+[CURRENCY] => INR
+[GATEWAYNAME] => PPBL
+[cardScheme] => MAESTRO
+[RESPMSG] => Your payment has been declined by your bank. Please try again or use a different method to complete the payment.
+[BANKNAME] =>
+[BIN] => 411111
+[PAYMENTMODE] => BANK_TRANSFER
+[CUSTID] =>
+[LASTFOURDIGITS] => 1111
+[MID] => INTEGR7769XXXXXX9383
+[MERC_UNQ_REF] =>
+[RESPCODE] => 227
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[ORDERID] => PPBL_98765
+[STATUS] => TXN_FAILURE
+[BANKTXNID] => 690762
+[TXNDATETIME] => 2021-04-16 14:11:32.0
+[TXNDATE] => 2021-04-16
+[CHECKSUMHASH] => oP3K9RmfFxNI7+vhTmtRxNHMQc7bx5RMn9SZGZ0HzxFeIXU/9K7qZNXBRRNe06w9W3qVoNaUFQxrfjI9kjoGCLVqr88gERQs366q/R8Oi9M=
+-----
+[CURRENCY] => INR,
+[GATEWAYNAME] => IICP,
+[RESPMSG] => Txn Success,
+[BANKNAME] => State Bank of India,
+[feeRateFactors] => {"internationalCardPayment":"TRUE","dcc":"TRUE"},
+[PAYMENTMODE] => DC,
+[CUSTID] => Test101,
+[MID] => INTEGR7769XXXXXX9383,
+[MERC_UNQ_REF] => ,
+[RESPCODE] => 01,
+[TXNID] => 202005081112128XXXXXX68470101509706,
+[TXNAMOUNT] => 1.00,
+[baseCurrency] => INR,
+[dccPaymentDetail] => {"dccId":"41XXXX72","amountPerUnitForeignAmount":"0.01","foreignCurrencyCode":"USD","foreignCurrencySymbol":"$","foreignPayableAmount":"0.01","foreignPaymentAmount":"0.01","foreignMarkupAmount":"0.46","foreignMarkupRatePercentage":"0.5","expirationTimestamp":"2021-02-12T18:48:03.733 05:30","exchangeRateSourceName":"MOCK","isoForeignCurrencyCode":"840","dccOffered":"true","foreignCurrencyName":"Dollar"},
+[internationalCardPayment] => true,
+[ORDERID] => ORDERID_98765,
+[STATUS] => TXN_SUCCESS,
+[BANKTXNID] => 77700XXXXX71013,
+[TXNDATETIME] => 2021-02-12 18:44:39.0,
+[TXNDATE] => 2021-02-12
+-----
+[CURRENCY] => INR
+[GATEWAYNAME] => IICP
+[cardScheme] => MASTER
+[RESPMSG] => Payment declined by your bank as the OTP/Password verification falied. Please try again by entering the correct values.
+[BANKNAME] => State Bank of India
+[BIN] => 555554
+[PAYMENTMODE] => DC
+[CUSTID] => Test101
+[LASTFOURDIGITS] => 1397
+[MID] => INTEGR7769XXXXXX9383
+[MERC_UNQ_REF] =>
+[RESPCODE] => 227
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[ORDERID] => ORDERID_98765
+[STATUS] => TXN_FAILURE
+[dccPaymentDetail] => {"dccId":"41XXXX72","amountPerUnitForeignAmount":"0.01","foreignCurrencyCode":"USD","foreignCurrencySymbol":"$","foreignPayableAmount":"0.01","foreignPaymentAmount":"0.01","foreignMarkupAmount":"0.46","foreignMarkupRatePercentage":"0.5","expirationTimestamp":"2021-02-12T18:48:03.733 05:30","exchangeRateSourceName":"MOCK","isoForeignCurrencyCode":"840","dccOffered":"true","foreignCurrencyName":"Dollar"},
+[BANKTXNID] => 16135626799
+[TXNDATETIME] => 2021-02-17 17:21:07.0
+[TXNDATE] => 2021-02-17
+[CHECKSUMHASH] => 6HhhdsTiFjx+jN7FM5ERP5V0aJFMh3vk+q46q1wqsmSs2JslxXaOcXBwbpMXK9YA2XmqWO/Dho0IDQmYCT3haZCh0xeAvDi69Nc8BS817Pk=

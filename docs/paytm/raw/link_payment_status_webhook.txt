@@ -1,0 +1,108 @@
+Link Payment Status
+
+Paytm sends a server to server (S2S) response in key value pair on the 'statusCallbackUrl' URL in Create Link API. Payment Link Success Webhook response is sent only when transaction has been completed by the user.
+
+The sample response of different payment sources are mentioned below.
+
+Wallet
+Saved Card
+New Card
+Net Banking
+UPI
+
+Success
+
+[PAYMENTEMAILID] => user@example.com
+[PAYMENTMOBILENUMBER] => 7777777777
+[GATEWAYNAME] => WALLET
+[RESPMSG] => Txn Success
+[BANKNAME] => WALLET
+[PAYMENTMODE] => PPI
+[CUSTID] => CUST_001
+[MID] => INTEGR7769XXXXXX9383
+[MERC_UNQ_REF] => LI_12345
+[RESPCODE] => 01
+[TXNID] => 202005081112128XXXXXX68470101509706
+[TXNAMOUNT] => 1.00
+[ORDERID] => ORDERID_98765
+[STATUS] => TXN_SUCCESS
+[BANKTXNID] => 63240520
+[TXNDATETIME] => 2020-09-10 13:03:05.0
+[TXNDATE] => 2020-09-10
+[CHECKSUMHASH] => PMXJocjUUKGq7MXGwHO0LNOV+YxwuYi4gKjRgFOIZVGVqyxqfFuec+A8boUq5Q3c87yYM9DOeCmjIj5mH20SfIiDjOJiU4eFzNxu0J1qKdc=
+[LINKNOTES] => Link Note Description
+
+Note: All the response codes of the transaction are available here.
+
+The parameters are briefly described below.
+
+Response Attributes
+ATTRIBUTE	DESCRIPTION
+ORDERID
+string	OrderId passed in the request
+Example: OREDRID_98765
+MID
+string	Merchant ID passed in the request
+Example: INTEGR7769XXXXXX9383
+TXNID
+string	Unique reference number generated at paytm side for each transaction
+Example: 202005081112128XXXXXX68470101509706
+TXNAMOUNT
+string	Payment transaction Amount
+Example: 1.00
+CURRENCY
+string	Payment currency type
+Example: INR
+PAYMENTMODE
+string	Payment Mode used in payment
+Example: PPI
+TXNDATE
+string	Transaction Date
+Example: 7/24/2020 15:13:02
+STATUS
+string	This parameter indicates the status of API call.
+Example: TXN_SUCCESS
+RESPCODE
+string	This is the resultCode corresponding to a particular message and is returned to the merchant. It's maximum length is 64. For list of different RESPCODE and RESPMSG please refer to the  PDF.
+Example: 01
+RESPMSG
+string	This parameter is the result message which contains information about the result.
+Example: Txn Success
+GATEWAYNAME
+string	Gateway Name used in payment
+Example: WALLET
+BANKTXNID
+string	Unique reference number generated at bank side for each transaction
+Example: 62909899
+BANKNAME
+string	Bank Name used in payment
+Example: WALLET
+CHECKSUMHASH
+string	Paytm validates the parameter values by verifying the signature comes in the request. It ensures that parameter values are not tempered. Signature string can be created by using Paytm checksum library.
+Example:
+y5Tn02QKOQdhyYKK+uHHgNIIZOjC/XXXXjSPQRBNSrcP6DR3ejFuQ4+kQi0a8KX2txJCnQkTnUxtJhM6jImU8FU+E1GlSSK5VjMLsSm/R6w=
+
+LINKDESCRIPTION
+string	This field will hold the description of the link for which the payment was done. Payment Link Description
+Example: Payment Link Description
+PAYMENTEMAILID
+string	This field will have the email id of the user through which payment was done.
+Example: user@example.com
+PAYMENTFORM
+string	This field will have details of payment form in json format if the transaction was done for a link in which payment form was attached.
+Example: [{"name":"Mobile Number","value":"9716XXX066"},{"name":"Your Name","value":"Lalit"}]
+PAYMENTMOBILENUMBER
+string	This field will have a mobile number of the user through which payment was done.
+Example: 7777777777
+CUSTID
+string	Paytm User ID in case user is logged in via Paytm credentials. Else this would mention the cust ID if passed by the merchant.
+Example: CUST_001
+MERC_UNQ_REF
+string	Unique value passed by merchant and it is expected in response. In case of Link Payments this field would mention the link ID
+Example: LI_12345
+TXNDATETIME
+string	Exact Time of Transaction Completion: YYYY-MM-DD hh:mm:ss
+Example: 2020-02-25 13:37:01.0
+LINKNOTES
+string	This field will hold the help notes for the link defined at the time of creation/updation of link.
+Example: Link notes description

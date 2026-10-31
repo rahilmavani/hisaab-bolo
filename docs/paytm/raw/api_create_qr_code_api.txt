@@ -1,0 +1,440 @@
+### MAIN TEXT
+POST
+Create QR Code API
+Use Case
+
+Purpose of this API is to generate the dynamic QR Code for the particular Order.
+
+Request Attributes
+Content Type : JSON
+Head
+ATTRIBUTE	DESCRIPTION
+
+clientId
+string(3)
+mandatory
+	
+
+Paytm use the merchant key on the basis of clientId parameter value. It requires only if the merchant has more than one key.
+
+Example: C11
+
+
+
+version
+string(4)
+mandatory
+	
+
+Version of the API.
+
+Example: v1
+
+
+
+requestTimestamp
+string(15)
+optional
+	
+
+EPOCH timestamp of the time at which request is being sent.
+Example: 1588402269
+
+
+
+channelId
+string(3)
+optional
+	
+
+The parameter value identifies the Channel for which API call is initiated.
+
+Possible values: WEB , WAP
+
+
+signature
+string(108)
+mandatory
+	
+
+Paytm validates the request and ensures that parameters are not tempered by verifying the signature in the request. For creating the checksum (signature) refer to the steps given in Checksum Logic.
+Note: Create the signature using the body parameter of the request.
+
+Body
+ATTRIBUTE	DESCRIPTION
+
+mid
+string
+mandatory
+	
+
+Paytm provides MID as a unique identifier to each merchant.
+
+Example: INTEGR7769XXXXXX93833
+
+
+
+orderId
+string
+mandatory
+	
+
+Order Id for payment
+
+Example: OREDRID98765
+
+
+
+amount
+string
+mandatory
+	
+
+This parameter contains the amount to be charged to the customer and can have two places of decimal.
+
+ 
+
+ 
+
+Example: 1303.00
+
+
+
+businessType
+string
+mandatory
+	
+
+Type of QR code to be created
+
+Example: UPI_QR_CODE
+
+
+
+posId
+string(50)
+mandatory
+	
+
+Pos Id
+
+Example: S12_123
+
+
+
+orderDetails
+string
+optional
+	
+
+Details of an Order
+
+Example: Grocery Items
+
+
+
+invoiceDetails
+string
+optional
+	
+
+Details of the Invoice/Bill Data associated with the transaction
+
+Example: #INV_ORDERID_98765
+
+
+
+contactPhoneNo
+string
+optional
+	
+
+Comma separated contact mobile number
+
+Example: 7777777777
+
+
+
+expiryDate
+string
+optional
+	
+
+Expiry date of the QR (Date Format : (yyyy-MM-dd HH:mm:ss))
+
+Example: 2020-06-10 12:30:30
+
+
+
+imageRequired
+boolean
+optional
+	
+
+If the image required in response, default true
+
+
+
+displayName
+string(50)
+optional
+	
+
+Display name for the QR code
+
+Example: Merchant Brand Name
+
+
+
+additionalInfo
+object
+optional
+	
+
+Additional information
+
+
+
+AdditionalInfo+
+
+
+comment
+string
+optional
+	
+
+Transaction description provided by the merchant
+
+
+
+subwalletAmount
+object
+optional
+	
+
+Cap amount for different user subwallets
+
+Example: {"FOOD": "2"}
+
+
+
+gstInformation
+object
+optional
+	
+
+GST information
+
+
+
+GSTInformation+
+
+
+splitSettlementInfo
+object
+optional
+	
+
+Split payment details
+
+Note: Send only in case split settlement required
+
+
+splitSettlementInfo(1)+
+
+Note: The possible values for the User SubWalletType Enum are:
+
+FOOD
+GIFT
+MULTI_PURPOSE_GIFT
+TOLL
+CLOSED_LOOP_WALLET
+CLOSED_LOOP_SUB_WALLET
+FUEL
+INTERNATIONAL_FUNDS_TRANSFER
+CASHBACK
+GIFT_VOUCHER
+COMMUNICATION
+
+If you are billing food and non-food items separately, it is imperative for you to pass the cap amount to be debited from the user's food wallet separately. Some of the examples of these merchant types are:
+
+Hypermarkets and Supermarkets
+Grocery stores
+Dining establishments and restaurants
+Retail stores
+
+Note: By default expiry time for the order created is 10 minutes from QR creation time stamp. If this needs to be extended for more than 10 minutes please contact Paytm.
+
+Response Codes & Messages
+resultCode	resultStatus	resultMsg
+QR_0001	SUCCESS	SUCCESS
+QR_1001	FAILURE	Error while encrypting JSON string
+QR_1002	FAILURE	Empty MID and MerchantGuid
+QR_1003	FAILURE	Empty Industry Type
+QR_1004	FAILURE	Empty Order Id
+QR_1005	FAILURE	Invalid Amount
+QR_1006	FAILURE	Empty Product Id
+QR_1007	FAILURE	Invalid Expiry Date
+QR_1008	FAILURE	Empty Product Details
+QR_1009	FAILURE	Empty Product Type
+QR_1010	FAILURE	Empty Inventory Count
+QR_1011	FAILURE	Invalid Request Type
+QR_1012	FAILURE	Invalid Request Type, Id is specified only for Product and Order QR codes
+QR_1013	FAILURE	Error while parsing date
+QR_1014	FAILURE	Start Date cannot be after Till Date
+QR_1015	FAILURE	Both id and date range cannot be null
+QR_1016	FAILURE	QR Code not found
+QR_1017	FAILURE	Empty id for searching QR Code
+QR_1018	FAILURE	Expiry date should be in the future
+QR_1019	FAILURE	Data already exist with this posid and mid
+QR_1020	FAILURE	Data already exist for this Merchant with same Id
+QR_1021	FAILURE	Data already exist with this orderId and mid
+QR_1022	FAILURE	Data already exist with this productId and mid
+QR_1023	FAILURE	Unable to find Merchant
+QR_1024	FAILURE	Not authorized to view QR Code
+QR_1025	FAILURE	Invalid update request
+QR_1026	FAILURE	Merchant key not found
+QR_1027	FAILURE	Empty Order Details
+QR_1028	FAILURE	Error Occurred while generating QRCode
+QR_1029	FAILURE	Unable to perform database operation, txn rollbacked
+QR_1030	FAILURE	Merchant guid and mid given in the request do not belong to same merchant
+QR_1031	FAILURE	Deeplink should be present in request
+QR_1032	FAILURE	Empty merchant handle
+QR_1033	FAILURE	A QR Code with same order id already exists
+QR_1034	FAILURE	A QR Code with same order id already exists
+GE_0001	FAILURE	Oops, something went wrong!
+GE_0003	FAILURE	We could not get the requested details. Please try again.
+GE_1010	FAILURE	We could not get the requested details. Please try again.
+GE_1043	FAILURE	Merchant does not exists
+DQR_0001	FAILURE	Blank request received
+DQR_0002	FAILURE	Field mid can not be blank
+DQR_0003	FAILURE	Field displayName can not be blank
+DQR_0004	FAILURE	Merchant's VPA-address not found
+DQR_0005	FAILURE	Could not generate UPI-handle
+DQR_0006	FAILURE	Request param changed with repeated order id
+DQR_0007	FAILURE	UPI Paymode is not enabled on Merchant
+DQR_0021	FAILURE	Invalid/Blank type of QrCode
+DQRO_0001	FAILURE	Error occured while generating order
+⇾
+Staging
+Production
+https://securegw-stage.paytmpayments.in/paymentservices/qr/create
+REQUEST
+RESPONSE
+CURL
+JAVA
+NODE
+PHP
+PYTHON
+DOTNET
+curl - X POST 'https://securegw-stage.paytmpayments.in/paymentservices/qr/create'\
+--header 'Content-Type: application/json'\
+--data '{"body":{"mid": "{mid}", "orderId": "OREDRID98765", "amount": "1303.00","businessType": "UPI_QR_CODE","posId": "S12_123"},
+"head": {"clientId": "C11", "version": "v1","signature": "{signature}"}}"
+
+
+
+### PRE after load
+curl - X POST 'https://securegw-stage.paytmpayments.in/paymentservices/qr/create'\
+--header 'Content-Type: application/json'\
+--data '{"body":{"mid": "{mid}", "orderId": "OREDRID98765", "amount": "1303.00","businessType": "UPI_QR_CODE","posId": "S12_123"},
+"head": {"clientId": "C11", "version": "v1","signature": "{signature}"}}"
+
+
+-----
+curl - X POST 'https://securegw-stage.paytmpayments.in/paymentservices/qr/create'\
+--header 'Content-Type: application/json'\
+--data '{"body":{"mid": "{mid}", "orderId": "OREDRID98765", "amount": "1303.00","businessType": "UPI_QR_CODE","posId": "S12_123"},
+"head": {"clientId": "C11", "version": "v1","signature": "{signature}"}}"
+
+### PRE after RESPONSE
+curl - X POST 'https://securegw-stage.paytmpayments.in/paymentservices/qr/create'\
+--header 'Content-Type: application/json'\
+--data '{"body":{"mid": "{mid}", "orderId": "OREDRID98765", "amount": "1303.00","businessType": "UPI_QR_CODE","posId": "S12_123"},
+"head": {"clientId": "C11", "version": "v1","signature": "{signature}"}}"
+
+
+-----
+curl - X POST 'https://securegw-stage.paytmpayments.in/paymentservices/qr/create'\
+--header 'Content-Type: application/json'\
+--data '{"body":{"mid": "{mid}", "orderId": "OREDRID98765", "amount": "1303.00","businessType": "UPI_QR_CODE","posId": "S12_123"},
+"head": {"clientId": "C11", "version": "v1","signature": "{signature}"}}"
+
+### PRE after PYTHON
+import requests
+import json
+
+# import checksum generation utility
+# You can get this utility from https://paytmpayments.com/docs/checksum/
+import PaytmChecksum
+
+paytmParams = dict()
+
+paytmParams["body"] = {
+    "mid"           : "YOUR_MID_HERE",
+    "orderId"       : "OREDRID98765",
+    "amount"        : "1303.00",
+    "businessType"  : "UPI_QR_CODE",
+    "posId"         : "S12_123"
+}
+
+# Generate checksum by parameters we have in body
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+checksum = PaytmChecksum.generateSignature(json.dumps(paytmParams["body"]), "YOUR_MERCHANT_KEY")
+
+paytmParams["head"] = {
+    "clientId"	        : "C11",
+    "version"	        : "v1",
+    "signature"         : checksum
+}
+
+post_data = json.dumps(paytmParams)
+
+# for Staging
+url = "https://securegw-stage.paytmpayments.in/paymentservices/qr/create"
+
+# for Production
+# url = "https://securegw.paytmpayments.in/paymentservices/qr/create"
+response = requests.post(url, data = post_data, headers = {"Content-type": "application/json"}).json()
+print(response)
+
+
+
+-----
+import requests
+import json
+
+# import checksum generation utility
+# You can get this utility from https://paytmpayments.com/docs/checksum/
+import PaytmChecksum
+
+paytmParams = dict()
+
+paytmParams["body"] = {
+    "mid"           : "YOUR_MID_HERE",
+    "orderId"       : "OREDRID98765",
+    "amount"        : "1303.00",
+    "businessType"  : "UPI_QR_CODE",
+    "posId"         : "S12_123"
+}
+
+# Generate checksum by parameters we have in body
+# Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytmpayments.com/next/apikeys 
+checksum = PaytmChecksum.generateSignature(json.dumps(paytmParams["body"]), "YOUR_MERCHANT_KEY")
+
+paytmParams["head"] = {
+    "clientId"	        : "C11",
+    "version"	        : "v1",
+    "signature"         : checksum
+}
+
+post_data = json.dumps(paytmParams)
+
+# for Staging
+url = "https://securegw-stage.paytmpayments.in/paymentservices/qr/create"
+
+# for Production
+# url = "https://securegw.paytmpayments.in/paymentservices/qr/create"
+response = requests.post(url, data = post_data, headers = {"Content-type": "application/json"}).json()
+print(response)
+
