@@ -6,7 +6,7 @@ import type { CallOutcome, CallStatus, Reminder } from "@/lib/types";
 export function callStatusLabel(status: CallStatus | null, durationS?: number | null): { text: string; tone: string } {
   switch (status) {
     case "queued":
-      return { text: "Calling…", tone: "text-sky" };
+      return { text: "Calling…", tone: "text-text" };
     case "connected":
       return { text: `Answered${durationS ? ` · ${durationS}s` : ""}`, tone: "text-mint" };
     case "no_answer":
@@ -44,7 +44,7 @@ export function CallHistoryItem({ r, emails = [] }: { r: Reminder; emails?: Remi
   return (
     <li data-testid="call-history-item" className="rounded-xl border border-line p-3">
       <span className="flex items-center gap-1.5 text-text">
-        <Phone size={14} aria-hidden className="text-sky" />
+        <Phone size={14} aria-hidden className="text-blue" />
         {r.kind === "overdue" ? "Overdue reminder call" : "Reminder call"}
       </span>
       <span className="block text-muted">

@@ -439,7 +439,8 @@ async def outstanding(conn: AsyncConnection, merchant_id: UUID) -> dict:
         conn,
         """
         select i.id, i.number, i.payer_id, p.display_name as payer_name, i.amount_paise, i.due_date,
-               i.status, i.paid_at
+               i.status, i.paid_at,
+               exists (select 1 from transactions t where t.invoice_id = i.id and t.source = 'manual') as marked_paid
           from invoices i join payers p on p.id = i.payer_id
          where i.merchant_id = %s and i.status = 'paid' and i.paid_at > app_now() - interval '7 days'
          order by i.paid_at desc limit 3

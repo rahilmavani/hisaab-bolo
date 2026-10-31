@@ -176,7 +176,7 @@ export function MergeDialog({
               <li key={p.id}>
                 <button
                   onClick={() => setPicked(p)}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-white/5"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-raised"
                 >
                   <Avatar name={p.display_name} size={34} />
                   <span className="min-w-0 flex-1">

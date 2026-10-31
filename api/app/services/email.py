@@ -91,6 +91,7 @@ def render_payment_email(
     gst_taxable: bool,
     payer_gstin: str | None,
     days_overdue: int = 0,
+    upi_payee: str | None = None,
 ) -> tuple[str, str, list[dict]]:
     """Returns (subject, html, attachments) for an invoice or a reminder."""
     amount = format_inr(amount_paise)
@@ -127,8 +128,8 @@ def render_payment_email(
 <p style="margin:0 0 18px;color:#33405e;font-size:15px;line-height:1.5">{lead}</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
 <td valign="middle">
-<a href="{esc(pay_url)}" style="display:inline-block;background:#2f6fed;color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;padding:12px 20px;border-radius:999px">Pay {amount} with Paytm</a>
-<p style="margin:10px 0 0;color:#55617d;font-size:13px">or scan with any UPI app</p>
+<a href="{esc(pay_url)}" style="display:inline-block;background:#2f6fed;color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;padding:12px 20px;border-radius:999px">Pay {amount} {"with any UPI app" if upi_payee else "with Paytm"}</a>
+<p style="margin:10px 0 0;color:#55617d;font-size:13px">or scan with any UPI app{(" · pays " + esc(upi_payee)) if upi_payee else ""}</p>
 </td>
 <td width="140" align="right" valign="middle">{qr_img}</td>
 </tr></table>

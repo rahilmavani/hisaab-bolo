@@ -4,7 +4,12 @@ import clsx from "clsx";
 import { TrendingDown } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { PeakHoursHeatmap, TrendChart, type Grain } from "@/components/charts";
+import {
+  COMPARE,
+  PeakHoursHeatmap,
+  TrendChart,
+  type Grain,
+} from "@/components/charts";
 import { InvoiceStatusText } from "@/components/invoice-status";
 import { PayerSearch } from "@/components/payer-search";
 import { PromisedPayments } from "@/components/promised-payments";
@@ -19,17 +24,54 @@ import { useApi } from "@/lib/api";
 import { dateOnly, hourLabel, inr, istDate, istTime, pct } from "@/lib/format";
 import type { DashboardSummary, TrendPoint } from "@/lib/types";
 
-const RANGES: { key: string; label: string; days: number; grain: Grain }[] = [
-  { key: "7d", label: "7 days", days: 7, grain: "day" },
-  { key: "30d", label: "30 days", days: 30, grain: "day" },
-  { key: "90d", label: "90 days", days: 91, grain: "week" },
+const RANGES: {
+  key: string;
+  label: string;
+  days: number;
+  grain: Grain;
+  now: string;
+  before: string;
+}[] = [
+  {
+    key: "7d",
+    label: "7 days",
+    days: 7,
+    grain: "day",
+    now: "Last 7 days",
+    before: "7 days before",
+  },
+  {
+    key: "30d",
+    label: "30 days",
+    days: 30,
+    grain: "day",
+    now: "Last 30 days",
+    before: "30 days before",
+  },
+  {
+    key: "90d",
+    label: "90 days",
+    days: 91,
+    grain: "week",
+    now: "Last 13 weeks",
+    before: "13 weeks before",
+  },
 ];
+
+/** The calendar date `days` before an ISO date, as YYYY-MM-DD. */
+function daysBefore(isoDate: string, days: number): string {
+  const d = new Date(`${isoDate}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
+}
 
 function TrendBlock({
   fallback,
+  date,
   isToday,
 }: {
   fallback: TrendPoint[];
+  date: string;
   isToday: boolean;
 }) {
   const [range, setRange] = useState(RANGES[0]);
@@ -39,18 +81,42 @@ function TrendBlock({
       : `/dashboard/trend?days=${range.days}&grain=${range.grain}`,
     { keepPreviousData: true },
   );
+  // The same span just before, for the quiet comparison line. `end` goes first so this
+  // request never matches a wait on `/dashboard/trend?days=…`.
+  const { data: before } = useApi<{ points: TrendPoint[] }>(
+    `/dashboard/trend?end=${daysBefore(date, range.days)}&days=${range.days}&grain=${range.grain}`,
+    { keepPreviousData: true },
+  );
   const points = range.key === "7d" ? fallback : (data?.points ?? fallback);
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <h2 className="text-sm text-muted">
-          Collections, last {range.label}
-          {range.grain === "week" ? " by week" : ""}
-        </h2>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-[15px] font-medium text-text">
+            Collections, last {range.label}
+            {range.grain === "week" ? " by week" : ""}
+          </h2>
+          <p className="mt-1 flex flex-wrap gap-x-4 font-mono text-xs text-faint">
+            <span className="flex items-center gap-2">
+              <span aria-hidden className="h-0.5 w-4 rounded-full bg-blue" />
+              {range.now}
+            </span>
+            {before ? (
+              <span className="flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className="h-0.5 w-4 rounded-full"
+                  style={{ background: COMPARE }}
+                />
+                {range.before}
+              </span>
+            ) : null}
+          </p>
+        </div>
         <div
           role="group"
           aria-label="Chart range"
-          className="flex rounded-full border border-line p-0.5 text-sm"
+          className="flex rounded-lg border border-line bg-page p-0.5"
         >
           {RANGES.map((r) => (
             <button
@@ -58,9 +124,9 @@ function TrendBlock({
               onClick={() => setRange(r)}
               aria-pressed={r.key === range.key}
               className={clsx(
-                "rounded-full px-3 py-1 transition-colors",
+                "h-7 rounded-md px-2.5 font-mono text-xs transition-colors",
                 r.key === range.key
-                  ? "bg-blue text-white"
+                  ? "bg-card text-text shadow-[inset_0_0_0_1px_var(--color-line)]"
                   : "text-muted hover:text-text",
               )}
             >
@@ -69,7 +135,14 @@ function TrendBlock({
           ))}
         </div>
       </div>
-      <TrendChart points={points} grain={range.grain} partialLast={isToday} />
+      <TrendChart
+        points={points}
+        grain={range.grain}
+        partialLast={isToday}
+        compare={before?.points}
+        compareLabel={range.before}
+        height={280}
+      />
     </div>
   );
 }
@@ -82,14 +155,14 @@ function SlowDayBanner({
   return (
     <div
       role="status"
-      className="flex items-start gap-3 rounded-2xl border border-amber/25 bg-amber/[0.07] px-4 py-3.5"
+      className="flex items-start gap-3 rounded-xl border border-line bg-card px-5 py-4 shadow-[0_1px_2px_rgb(31_27_22/0.05)]"
     >
       <TrendingDown
-        size={20}
-        className="mt-0.5 shrink-0 text-amber"
+        size={16}
+        className="mt-[3px] shrink-0 text-amber"
         aria-hidden
       />
-      <p className="text-[0.98rem] text-text">
+      <p className="text-[15px] text-text">
         Slow day: takings are {slow.drop_pct}% below a usual {slow.weekday} so
         far.{" "}
         <span className="text-muted">
@@ -124,38 +197,39 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-[1.9rem] leading-tight font-semibold tracking-tight sm:text-[2.2rem]">
-            Today’s hisaab
-          </h1>
-          <p className="text-muted">
-            {dateOnly(data.date, {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-            })}
-            {data.is_today ? `, as of ${istTime(data.now)}` : ""}
-          </p>
-        </div>
+      <header>
+        <h1 className="text-[28px] leading-9 font-medium tracking-[-0.01em] sm:text-[30px]">
+          Today’s hisaab
+        </h1>
+        <p className="mt-1 text-sm text-muted">
+          {dateOnly(data.date, {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          })}
+          {data.is_today ? `, as of ${istTime(data.now)}` : ""}
+        </p>
       </header>
 
       {data.slow_day?.is_slow ? <SlowDayBanner slow={data.slow_day} /> : null}
 
       <section
         aria-label="Today at a glance"
-        className="glass space-y-6 p-5 sm:p-7"
+        className="panel flex flex-col gap-8 p-5 sm:p-6"
       >
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-          <StatTile
-            label="Collected today"
-            value={inr(k.collected_paise)}
-            delta={
-              k.change_vs_last_week === null
-                ? null
-                : { ratio: k.change_vs_last_week, vs: compareLabel }
-            }
-          />
+        <div className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3">
+          <div className="col-span-2 sm:col-span-1">
+            <StatTile
+              label="Collected today"
+              value={inr(k.collected_paise)}
+              total
+              delta={
+                k.change_vs_last_week === null
+                  ? null
+                  : { ratio: k.change_vs_last_week, vs: compareLabel }
+              }
+            />
+          </div>
           <StatTile
             label="Payments"
             value={k.payments.toLocaleString("en-IN")}
@@ -167,7 +241,11 @@ export default function DashboardPage() {
             sub="of today’s volume"
           />
         </div>
-        <TrendBlock fallback={data.trend} isToday={data.is_today} />
+        <TrendBlock
+          fallback={data.trend}
+          date={data.date}
+          isToday={data.is_today}
+        />
         <PayerSearch limit={5} />
       </section>
 
@@ -179,9 +257,17 @@ export default function DashboardPage() {
           <SectionTitle
             title="Pending payments"
             sub={
-              data.outstanding.invoices.length
-                ? `${inr(data.outstanding.total_paise)} outstanding · ${data.outstanding.customers} customer${data.outstanding.customers === 1 ? "" : "s"}`
-                : "Nothing outstanding"
+              data.outstanding.invoices.length ? (
+                <>
+                  <span className="ledger-total num font-mono text-text">
+                    {inr(data.outstanding.total_paise)}
+                  </span>{" "}
+                  outstanding · {data.outstanding.customers} customer
+                  {data.outstanding.customers === 1 ? "" : "s"}
+                </>
+              ) : (
+                "Nothing outstanding"
+              )
             }
           />
           <h2 id="pending-title" className="sr-only">
@@ -189,12 +275,12 @@ export default function DashboardPage() {
           </h2>
           {data.outstanding.invoices.length ||
           data.outstanding.recently_paid.length ? (
-            <table className="w-full text-left text-[0.97rem]">
-              <thead className="text-sm text-muted">
+            <table className="w-full text-left text-[15px]">
+              <thead className="text-[13px] text-faint">
                 <tr className="border-b border-line">
-                  <th className="py-2 font-normal">Customer</th>
-                  <th className="py-2 text-right font-normal">Amount</th>
-                  <th className="py-2 pl-4 font-normal">Status</th>
+                  <th className="h-9 font-normal">Customer</th>
+                  <th className="h-9 text-right font-normal">Amount</th>
+                  <th className="h-9 pl-6 font-normal">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -206,7 +292,7 @@ export default function DashboardPage() {
                     <td className="py-3">
                       <Link
                         href={`/customers/${inv.payer_id}`}
-                        className="hover:text-sky"
+                        className="transition-colors hover:text-blue"
                       >
                         {inv.payer_name}
                       </Link>
@@ -217,7 +303,7 @@ export default function DashboardPage() {
                     <td className="num py-3 text-right font-mono">
                       {inr(inv.amount_paise)}
                     </td>
-                    <td className="py-3 pl-4">
+                    <td className="py-3 pl-6">
                       <InvoiceStatusText
                         status={inv.status}
                         dueInDays={-inv.days_overdue}
@@ -226,15 +312,22 @@ export default function DashboardPage() {
                     </td>
                   </tr>
                 ))}
+                {data.outstanding.recently_paid.length ? (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="pt-5 pb-1 text-[13px] text-faint"
+                    >
+                      Paid recently
+                    </td>
+                  </tr>
+                ) : null}
                 {data.outstanding.recently_paid.map((inv) => (
-                  <tr
-                    key={inv.id}
-                    className="border-b border-line last:border-0"
-                  >
+                  <tr key={inv.id} className="border-t border-line">
                     <td className="py-3">
                       <Link
                         href={`/collections/${inv.id}`}
-                        className="hover:text-sky"
+                        className="transition-colors hover:text-blue"
                       >
                         {inv.payer_name}
                       </Link>
@@ -242,11 +335,15 @@ export default function DashboardPage() {
                         {inv.number}
                       </span>
                     </td>
-                    <td className="num py-3 text-right font-mono">
+                    <td className="num py-3 text-right font-mono text-muted">
                       {inr(inv.amount_paise)}
                     </td>
-                    <td className="py-3 pl-4">
-                      <InvoiceStatusText status="paid" dueInDays={0} />
+                    <td className="py-3 pl-6">
+                      <InvoiceStatusText
+                        status="paid"
+                        dueInDays={0}
+                        markedPaid={inv.marked_paid}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -268,16 +365,16 @@ export default function DashboardPage() {
             sub="Regulars who have missed far more than their usual gap"
           />
           {data.lost_regulars.length ? (
-            <ul className="space-y-3">
+            <ul className="-mx-3 space-y-1">
               {data.lost_regulars.map((p) => (
                 <li key={p.id}>
                   <Link
                     href={`/customers/${p.id}`}
-                    className="flex items-center gap-3 rounded-2xl border border-amber/20 bg-amber/[0.05] px-4 py-3 hover:border-amber/40"
+                    className="flex items-center gap-3 rounded-[10px] px-3 py-3 transition-colors hover:bg-raised/60"
                   >
-                    <Avatar name={p.display_name} size={38} />
+                    <Avatar name={p.display_name} size={36} />
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold">
+                      <p className="font-medium">
                         {p.display_name}{" "}
                         <span className="font-normal text-amber">
                           · last paid {Math.floor(p.days_since_last ?? 0)} days
@@ -321,14 +418,14 @@ export default function DashboardPage() {
               {data.recent.map((t) => (
                 <li
                   key={t.id}
-                  className="flex items-center justify-between gap-3 py-2.5"
+                  className="flex items-center justify-between gap-3 py-3"
                 >
                   <div className="min-w-0">
-                    <p className="truncate">
+                    <p className="truncate text-[15px]">
                       {t.payer_id ? (
                         <Link
                           href={`/customers/${t.payer_id}`}
-                          className="hover:text-sky"
+                          className="transition-colors hover:text-blue"
                         >
                           {t.payer_name}
                         </Link>
@@ -341,8 +438,12 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="num font-mono">{inr(t.amount_paise)}</p>
-                    <p className="text-xs text-faint">{istTime(t.paid_at)}</p>
+                    <p className="num font-mono text-[15px]">
+                      {inr(t.amount_paise)}
+                    </p>
+                    <p className="font-mono text-xs text-faint">
+                      {istTime(t.paid_at)}
+                    </p>
                   </div>
                 </li>
               ))}
@@ -367,7 +468,7 @@ function DashboardSkeleton() {
       aria-label="Loading"
     >
       <Skeleton className="h-14 w-72" />
-      <Skeleton className="h-[460px] rounded-[28px]" />
+      <Skeleton className="h-[560px] rounded-2xl" />
       <div className="grid gap-6 @4xl:grid-cols-2">
         <Skeleton className="h-64" />
         <Skeleton className="h-64" />

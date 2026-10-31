@@ -189,7 +189,7 @@ export default function CollectionsPage() {
         </button>
       </header>
 
-      <section className="glass p-5 sm:p-7">
+      <section className="panel p-5 sm:p-7">
         <SectionTitle
           title="Pending payments"
           sub={
@@ -224,7 +224,7 @@ export default function CollectionsPage() {
                         <td className="py-3">
                           <Link
                             href={`/collections/${inv.id}`}
-                            className="font-medium hover:text-sky"
+                            className="font-medium hover:text-blue"
                           >
                             {inv.payer_name}
                           </Link>
@@ -303,7 +303,7 @@ export default function CollectionsPage() {
               <li key={inv.id}>
                 <Link
                   href={`/collections/${inv.id}`}
-                  className="flex items-center justify-between gap-3 py-3 hover:text-sky"
+                  className="flex items-center justify-between gap-3 py-3 hover:text-blue"
                 >
                   <span>
                     {inv.payer_name}

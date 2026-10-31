@@ -53,7 +53,7 @@ function DescriptionCell({ txn, onSaved }: { txn: Txn; onSaved: (t: Txn) => void
           }}
           className="field py-1.5 text-sm"
         />
-        <button type="submit" disabled={busy} aria-label="Save description" className="rounded-full p-1.5 text-mint hover:bg-white/5">
+        <button type="submit" disabled={busy} aria-label="Save description" className="rounded-full p-1.5 text-mint hover:bg-raised">
           <Check size={16} />
         </button>
         <button
@@ -64,7 +64,7 @@ function DescriptionCell({ txn, onSaved }: { txn: Txn; onSaved: (t: Txn) => void
             setValue(txn.description ?? "");
             setError(null);
           }}
-          className="rounded-full p-1.5 text-muted hover:bg-white/5"
+          className="rounded-full p-1.5 text-muted hover:bg-raised"
         >
           <X size={16} />
         </button>
@@ -77,7 +77,7 @@ function DescriptionCell({ txn, onSaved }: { txn: Txn; onSaved: (t: Txn) => void
     <div className="group flex items-center gap-2">
       <span className={txn.description ? "text-text" : "text-faint"}>{txn.description ?? "No description yet"}</span>
       {txn.description_by === "ai" ? (
-        <Sparkles size={13} className="shrink-0 text-sky" aria-label="Written by Hisaab AI" />
+        <Sparkles size={13} className="shrink-0 text-blue" aria-label="Written by Hisaab AI" />
       ) : null}
       <button
         onClick={() => setEditing(true)}

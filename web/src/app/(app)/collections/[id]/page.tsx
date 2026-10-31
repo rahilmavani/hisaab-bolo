@@ -16,6 +16,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { CallHistoryItem } from "@/components/call-status";
 import { invoiceStatusLabel } from "@/components/invoice-status";
+import { MarkPaid } from "@/components/mark-paid";
 import { ErrorNote, Skeleton } from "@/components/ui";
 import { ApiError, api, useApi } from "@/lib/api";
 import { dateOnly, inr, istDate, istTime } from "@/lib/format";
@@ -27,7 +28,7 @@ function PaperInvoice({ inv }: { inv: InvoiceDetail }) {
     <article
       aria-label={`Invoice ${inv.number}`}
       className={clsx(
-        "relative overflow-hidden rounded-[22px] bg-paper p-6 text-paper-ink shadow-[0_30px_80px_-30px_rgba(47,111,237,0.45)] sm:p-8",
+        "relative overflow-hidden rounded-[20px] border border-line bg-paper p-6 text-paper-ink shadow-[0_8px_24px_rgb(31_27_22/0.06)] sm:p-8",
         paid && "pb-28 sm:pb-28",
       )}
     >
@@ -251,7 +252,11 @@ export default function InvoicePage() {
               className={clsx("mt-0.5 text-2xl font-semibold", status.tone)}
               data-testid="invoice-status"
             >
-              {inv.status === "paid" ? "Paid · auto-matched" : status.text}
+              {inv.status === "paid"
+                ? inv.payment?.source === "manual"
+                  ? "Paid · marked by you"
+                  : "Paid · auto-matched"
+                : status.text}
             </p>
             {inv.payment ? (
               <p className="mt-1 text-sm text-muted">
@@ -301,6 +306,12 @@ export default function InvoicePage() {
                   <RefreshCw size={16} aria-hidden />{" "}
                   {busy === "check" ? "Checking with Paytm…" : "Check payment"}
                 </button>
+                <MarkPaid
+                  invoiceId={inv.id}
+                  number={inv.number}
+                  amountPaise={inv.amount_paise}
+                  onDone={() => mutate()}
+                />
                 {!reminderTo ? (
                   <p className="text-sm text-muted">
                     Add an email to {inv.payer_name} to send reminders.
@@ -410,20 +421,22 @@ export default function InvoicePage() {
                   <CallHistoryItem
                     key={r.id}
                     r={r}
-                    emails={inv.reminders.filter((e) => e.sent_during_call === r.id)}
+                    emails={inv.reminders.filter(
+                      (e) => e.sent_during_call === r.id,
+                    )}
                   />
                 ) : r.sent_during_call ? null : (
-                <li key={r.id ?? i}>
-                  <span className="text-text">
-                    {r.kind === "overdue"
-                      ? "Overdue reminder emailed"
-                      : "Invoice emailed"}
-                  </span>{" "}
-                  <span className="text-muted">
-                    {istDate(r.sent_at)}, {istTime(r.sent_at)}
-                    {r.to_email ? ` to ${r.to_email}` : ""}
-                  </span>
-                </li>
+                  <li key={r.id ?? i}>
+                    <span className="text-text">
+                      {r.kind === "overdue"
+                        ? "Overdue reminder emailed"
+                        : "Invoice emailed"}
+                    </span>{" "}
+                    <span className="text-muted">
+                      {istDate(r.sent_at)}, {istTime(r.sent_at)}
+                      {r.to_email ? ` to ${r.to_email}` : ""}
+                    </span>
+                  </li>
                 ),
               )}
               {failure && inv.status !== "paid" ? (
@@ -439,7 +452,11 @@ export default function InvoicePage() {
               ) : null}
               {inv.payment ? (
                 <li>
-                  <span className="text-mint">Paid and matched</span>{" "}
+                  <span className="text-mint">
+                    {inv.payment.source === "manual"
+                      ? "Marked paid by you"
+                      : "Paid and matched"}
+                  </span>{" "}
                   <span className="text-muted">
                     {istDate(inv.payment.paid_at)},{" "}
                     {istTime(inv.payment.paid_at)}
@@ -467,8 +484,8 @@ export default function InvoicePage() {
             {open && confirmCancel ? (
               <div className="mt-4 space-y-2 rounded-xl border border-rose/30 p-3 text-sm">
                 <p>
-                  Cancel {inv.number}? Its payment link stops taking payments and
-                  it won’t count as outstanding.
+                  Cancel {inv.number}? Its payment link stops taking payments
+                  and it won’t count as outstanding.
                 </p>
                 <div className="flex gap-2">
                   <button

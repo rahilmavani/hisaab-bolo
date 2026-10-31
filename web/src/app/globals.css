@@ -1,94 +1,84 @@
 @import "tailwindcss";
 
-/* Hisaab Bolo tokens, taken from the pitch-deck mockups: deep navy, glass panels,
-   one bright blue for action, sky for data, status colours only where they mean something. */
+/* Hisaab Bolo tokens: a shop ledger in daylight. Warm paper neutrals for every surface,
+   Paytm blue as the one accent, status colours only where they mean something. */
 @theme {
-  --color-ink: #050a1a;
-  --color-ink-2: #0b1430;
-  --color-panel: rgb(13 22 50 / 0.72);
-  --color-line: rgb(148 170 220 / 0.14);
-  --color-line-strong: rgb(148 170 220 / 0.26);
-  --color-blue: #2f6fed;
-  --color-blue-strong: #4580f7;
-  --color-sky: #8fb4ff;
-  --color-text: #eaf0ff;
-  --color-muted: #8c9bbe;
-  --color-faint: #5d6b8e;
-  --color-amber: #f5a35c;
-  --color-mint: #5ed3a5;
-  --color-rose: #f27a7a;
-  --color-paper: #f4f7fd;
+  --color-page: #f7f4ee;
+  --color-side: #f1ede5;
+  --color-card: #fdfbf7;
+  --color-raised: #efe9df;
+  --color-line: rgb(31 27 22 / 0.09);
+  --color-line-strong: rgb(31 27 22 / 0.16);
+  --color-blue: #2a5fd6;
+  --color-blue-strong: #224fb5;
+  --color-text: #1f1b16;
+  --color-muted: #5e554a;
+  --color-faint: #736a5e;
+  --color-amber: #b45309;
+  --color-mint: #15803d;
+  --color-rose: #c42b1c;
+  --color-paper: #ffffff;
   --color-paper-ink: #0f1a33;
   --color-paper-muted: #55617d;
 
   --font-sans: var(--font-mukta), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
 
-  --radius-hero: 28px;
-  --radius-panel: 20px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html {
-  color-scheme: dark;
-  background: var(--color-ink);
+  color-scheme: light;
+  background: var(--color-page);
 }
 
 body {
   min-height: 100dvh;
   color: var(--color-text);
   font-family: var(--font-sans);
-  background:
-    radial-gradient(1100px 620px at 62% -12%, rgb(47 111 237 / 0.28), transparent 62%),
-    radial-gradient(700px 500px at 100% 100%, rgb(47 111 237 / 0.1), transparent 70%),
-    var(--color-ink);
-  background-attachment: fixed;
+  background: var(--color-page);
   font-feature-settings: "kern";
 }
 
 @layer base {
   :focus-visible {
-    outline: 2px solid var(--color-sky);
+    outline: 2px solid var(--color-blue);
     outline-offset: 2px;
     border-radius: 8px;
+  }
+  /* One stroke for every lucide icon. */
+  svg.lucide {
+    stroke-width: 1.5;
   }
 }
 
 @layer components {
-  /* The deck's hero card: glass on navy. Used once or twice per screen, not everywhere. */
-  .glass {
-    background: linear-gradient(180deg, rgb(24 40 86 / 0.55), rgb(10 18 44 / 0.62));
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-hero);
-    backdrop-filter: blur(18px);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
-  }
-  /* Quieter secondary panels. */
   .panel {
-    background: rgb(11 19 44 / 0.6);
+    background: var(--color-card);
     border: 1px solid var(--color-line);
-    border-radius: var(--radius-panel);
-  }
-  .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--color-sky);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgb(31 27 22 / 0.05);
   }
   .num {
     font-variant-numeric: tabular-nums;
+  }
+  /* The ledger's double rule under a total. Used on the day's takings and the outstanding total only. */
+  .ledger-total {
+    display: inline-block;
+    padding-bottom: 2px;
+    border-bottom: 3px double rgb(31 27 22 / 0.5);
   }
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 9999px;
-    padding: 0.55rem 1.1rem;
-    font-weight: 600;
-    font-size: 0.95rem;
-    line-height: 1.2;
-    transition: background-color 120ms ease, opacity 120ms ease;
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+    transition: background-color 150ms var(--ease-out), opacity 150ms var(--ease-out);
     white-space: nowrap;
   }
   .btn:disabled {
@@ -105,38 +95,38 @@ body {
   .btn-quiet {
     border: 1px solid var(--color-line-strong);
     color: var(--color-text);
-    background: rgb(255 255 255 / 0.02);
+    background: var(--color-card);
   }
   .btn-quiet:not(:disabled):hover {
-    background: rgb(255 255 255 / 0.06);
+    background: var(--color-raised);
   }
   .field {
     width: 100%;
-    border-radius: 14px;
+    border-radius: 10px;
     border: 1px solid var(--color-line-strong);
-    background: rgb(5 10 26 / 0.6);
-    padding: 0.6rem 0.85rem;
+    background: var(--color-card);
+    padding: 0.5rem 0.75rem;
     color: var(--color-text);
-    font-size: 0.98rem;
+    font-size: 0.9375rem;
   }
   .field::placeholder {
     color: var(--color-faint);
   }
   .field:focus {
     outline: none;
-    border-color: var(--color-sky);
+    border-color: var(--color-blue);
   }
 }
 
 /* The one orchestrated moment: an invoice flipping to paid. */
 .paid-stamp {
-  animation: stamp 520ms cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+  animation: stamp 480ms var(--ease-out) both;
 }
 /* Tailwind's translate/rotate utilities use the individual properties, so only scale animates here. */
 @keyframes stamp {
   from {
     opacity: 0;
-    scale: 1.8;
+    scale: 1.4;
   }
   to {
     opacity: 0.9;

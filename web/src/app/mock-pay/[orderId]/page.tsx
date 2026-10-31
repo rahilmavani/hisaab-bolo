@@ -1,11 +1,11 @@
 "use client";
 
-import { CheckCircle2, FlaskConical, XCircle } from "lucide-react";
+import { CheckCircle2, FlaskConical, Smartphone, XCircle } from "lucide-react";
 import { useParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import useSWR from "swr";
-import { API_BASE } from "@/lib/api";
 import { dateOnly, inr, istDate, istTime } from "@/lib/format";
+import { supabaseBrowser } from "@/lib/supabase/client";
 import type { LineItem } from "@/lib/types";
 
 type Order = {
@@ -20,31 +20,64 @@ type Order = {
   line_items: LineItem[];
   txn_id: string | null;
   paid_at: string | null;
+  // The shop's own UPI ID, when it has one: real money, straight to the shop.
+  upi: {
+    uri: string;
+    qr_png: string;
+    payee_name: string;
+    upi_id: string;
+  } | null;
+  // False for customers once the shop's real UPI ID is set: only the signed-in owner may simulate.
+  test_payments: boolean;
 };
+
+/** The shop owner's session, when they open their own pay link (customers have none). */
+async function ownerAuth(): Promise<Record<string, string>> {
+  const { data } = await supabaseBrowser().auth.getSession();
+  return data.session
+    ? { Authorization: `Bearer ${data.session.access_token}` }
+    : {};
+}
+
+// Same-origin path that the Next.js server forwards to the API (next.config.ts), so the page also works on
+// a phone that can only reach the web app (a tunnel), not the API.
+const payApi = (orderId: string) => `/pay-api/${encodeURIComponent(orderId)}`;
 
 type Outcome = "success" | "failure" | "success_no_webhook";
 
 function MockPay() {
   const { orderId } = useParams<{ orderId: string }>();
-  const { data: order, error: loadError, mutate } = useSWR<Order>(`mock-pay:${orderId}`, async () => {
-    const r = await fetch(`${API_BASE}/mock-pay/${encodeURIComponent(orderId)}`);
+  const {
+    data: order,
+    error: loadError,
+    mutate,
+  } = useSWR<Order>(`mock-pay:${orderId}`, async () => {
+    const r = await fetch(payApi(orderId), { headers: await ownerAuth() });
     if (!r.ok) {
-      throw new Error(r.status === 404 ? "This payment link doesn't exist or has expired." : `Couldn't load the payment (${r.status}).`);
+      throw new Error(
+        r.status === 404
+          ? "This payment link doesn't exist or has expired."
+          : `Couldn't load the payment (${r.status}).`,
+      );
     }
     return r.json();
   });
   const [payError, setPayError] = useState<string | null>(null);
   const [busy, setBusy] = useState<Outcome | null>(null);
-  const [result, setResult] = useState<{ status: string; txn_id: string; webhook_sent: boolean } | null>(null);
+  const [result, setResult] = useState<{
+    status: string;
+    txn_id: string;
+    webhook_sent: boolean;
+  } | null>(null);
   const error = payError ?? (loadError ? (loadError as Error).message : null);
 
   async function pay(outcome: Outcome) {
     setBusy(outcome);
     setPayError(null);
     try {
-      const r = await fetch(`${API_BASE}/mock-pay/${encodeURIComponent(orderId)}`, {
+      const r = await fetch(payApi(orderId), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await ownerAuth()) },
         body: JSON.stringify({ outcome }),
       });
       const body = await r.json();
@@ -59,11 +92,17 @@ function MockPay() {
   }
 
   return (
-    <main className="min-h-dvh bg-[#eef2fa] px-4 py-8 text-paper-ink sm:py-14" style={{ colorScheme: "light" }}>
+    <main
+      className="min-h-dvh bg-[#eef2fa] px-4 py-8 text-paper-ink sm:py-14"
+      style={{ colorScheme: "light" }}
+    >
       <div className="mx-auto w-full max-w-md space-y-4">
-        <p className="flex items-center justify-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm text-amber-900">
-          <FlaskConical size={16} aria-hidden /> Test payment gateway. No real money moves.
-        </p>
+        {!order?.upi ? (
+          <p className="flex items-center justify-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm text-amber-900">
+            <FlaskConical size={16} aria-hidden /> Test payment gateway. No real
+            money moves.
+          </p>
+        ) : null}
 
         <section className="rounded-[22px] bg-white p-6 shadow-[0_20px_60px_-30px_rgba(15,26,51,0.35)] sm:p-7">
           {error && !order ? (
@@ -76,10 +115,16 @@ function MockPay() {
             </p>
           ) : (
             <>
-              <p className="text-sm text-paper-muted">Paying {order.merchant_name ?? "merchant"}</p>
-              <h1 className="mt-1 text-[2.4rem] leading-none font-semibold tracking-tight">{inr(order.amount_paise)}</h1>
+              <p className="text-sm text-paper-muted">
+                Paying {order.merchant_name ?? "merchant"}
+              </p>
+              <h1 className="mt-1 text-[2.4rem] leading-none font-semibold tracking-tight">
+                {inr(order.amount_paise)}
+              </h1>
               <p className="mt-2 text-paper-muted">
-                {order.invoice_number ? `Invoice ${order.invoice_number}` : "Payment"}
+                {order.invoice_number
+                  ? `Invoice ${order.invoice_number}`
+                  : "Payment"}
                 {order.payer_name ? ` for ${order.payer_name}` : ""}
                 {order.due_date ? ` · due ${dateOnly(order.due_date)}` : ""}
               </p>
@@ -92,18 +137,29 @@ function MockPay() {
                         {it.name}
                         {it.qty !== 1 ? ` × ${it.qty}` : ""}
                       </span>
-                      <span className="font-mono">{inr(it.qty * it.unit_price_paise)}</span>
+                      <span className="font-mono">
+                        {inr(it.qty * it.unit_price_paise)}
+                      </span>
                     </li>
                   ))}
                 </ul>
               ) : null}
 
-              {order.invoice_status === "cancelled" && order.status !== "TXN_SUCCESS" ? (
-                <p role="status" className="mt-6 rounded-2xl bg-paper-ink/5 p-4">
-                  This invoice was cancelled by {order.merchant_name ?? "the merchant"}. There’s nothing to pay.
+              {order.invoice_status === "cancelled" &&
+              order.status !== "TXN_SUCCESS" ? (
+                <p
+                  role="status"
+                  className="mt-6 rounded-2xl bg-paper-ink/5 p-4"
+                >
+                  This invoice was cancelled by{" "}
+                  {order.merchant_name ?? "the merchant"}. There’s nothing to
+                  pay.
                 </p>
               ) : order.status === "TXN_SUCCESS" ? (
-                <div role="status" className="mt-6 rounded-2xl bg-emerald-50 p-4 text-emerald-900">
+                <div
+                  role="status"
+                  className="mt-6 rounded-2xl bg-emerald-50 p-4 text-emerald-900"
+                >
                   <p className="flex items-center gap-2 font-semibold">
                     <CheckCircle2 size={20} aria-hidden /> Payment successful
                   </p>
@@ -112,55 +168,116 @@ function MockPay() {
                       {istDate(order.paid_at)}, {istTime(order.paid_at)}
                     </p>
                   ) : null}
-                  {order.txn_id ? <p className="mt-1 font-mono text-xs break-all">Txn {order.txn_id}</p> : null}
+                  {order.txn_id ? (
+                    <p className="mt-1 font-mono text-xs break-all">
+                      Txn {order.txn_id}
+                    </p>
+                  ) : null}
                   {result && !result.webhook_sent ? (
                     <p className="mt-2 text-sm">
-                      The merchant wasn’t notified (webhook dropped on purpose). Their “Check payment” button or the
-                      5-minute check will pick it up.
+                      The merchant wasn’t notified (webhook dropped on purpose).
+                      Their “Check payment” button or the 5-minute check will
+                      pick it up.
                     </p>
                   ) : (
                     <p className="mt-2 text-sm">You can close this page.</p>
                   )}
                 </div>
               ) : (
-                <div className="mt-6 space-y-2.5">
-                  {order.status === "TXN_FAILURE" ? (
-                    <p role="status" className="flex items-center gap-2 text-sm text-rose-700">
-                      <XCircle size={16} aria-hidden /> The last attempt failed. You can try again.
-                    </p>
+                <>
+                  {order.upi ? (
+                    <div className="mt-6 space-y-3">
+                      {/* upi:// opens the payer's UPI app (Android offers a choice); the amount is filled in. */}
+                      <a
+                        href={order.upi.uri}
+                        className="flex w-full items-center justify-center gap-2 rounded-full bg-[#2f6fed] px-5 py-3.5 text-lg font-semibold text-white hover:bg-[#4580f7]"
+                      >
+                        <Smartphone size={20} aria-hidden /> Pay{" "}
+                        {inr(order.amount_paise)} with UPI app
+                      </a>
+                      <p className="text-center text-sm text-paper-muted">
+                        Opens Paytm, PhonePe, Google Pay or any UPI app on this
+                        phone. Pays {order.upi.payee_name} · {order.upi.upi_id}
+                      </p>
+                      <figure className="flex flex-col items-center gap-2 pt-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- a data: URI, nothing to optimise */}
+                        <img
+                          src={`data:image/png;base64,${order.upi.qr_png}`}
+                          alt={`UPI QR code to pay ${inr(order.amount_paise)} to ${order.upi.payee_name}`}
+                          className="h-48 w-48"
+                        />
+                        <figcaption className="text-sm text-paper-muted">
+                          On a computer? Scan with any UPI app.
+                        </figcaption>
+                      </figure>
+                      <p className="rounded-2xl bg-paper-ink/5 p-3 text-sm text-paper-muted">
+                        Paid in your UPI app?{" "}
+                        {order.merchant_name ?? "The shop"} will mark the
+                        invoice paid once the money arrives.
+                      </p>
+                      {order.test_payments ? (
+                        <p className="flex items-center gap-2 pt-3 text-sm font-medium text-paper-muted">
+                          <FlaskConical size={15} aria-hidden /> Test payment
+                          (no real money moves)
+                        </p>
+                      ) : null}
+                    </div>
                   ) : null}
-                  <button
-                    onClick={() => pay("success")}
-                    disabled={busy !== null}
-                    className="w-full rounded-full bg-[#2f6fed] px-5 py-3.5 text-lg font-semibold text-white hover:bg-[#4580f7] disabled:opacity-50"
-                  >
-                    {busy === "success" ? "Paying…" : `Pay ${inr(order.amount_paise)}`}
-                  </button>
-                  <button
-                    onClick={() => pay("failure")}
-                    disabled={busy !== null}
-                    className="w-full rounded-full border border-paper-ink/20 px-5 py-3 font-medium hover:bg-paper-ink/5 disabled:opacity-50"
-                  >
-                    {busy === "failure" ? "Declining…" : "Simulate a failed payment"}
-                  </button>
-                  <button
-                    onClick={() => pay("success_no_webhook")}
-                    disabled={busy !== null}
-                    className="w-full px-5 py-2 text-sm text-paper-muted underline-offset-2 hover:underline disabled:opacity-50"
-                  >
-                    Pay, but drop the merchant notification
-                  </button>
-                  {error ? (
-                    <p role="alert" className="text-sm text-rose-700">
-                      {error}
-                    </p>
+                  {order.test_payments ? (
+                    <div className="mt-6 space-y-2.5">
+                      {order.status === "TXN_FAILURE" ? (
+                        <p
+                          role="status"
+                          className="flex items-center gap-2 text-sm text-rose-700"
+                        >
+                          <XCircle size={16} aria-hidden /> The last attempt
+                          failed. You can try again.
+                        </p>
+                      ) : null}
+                      <button
+                        onClick={() => pay("success")}
+                        disabled={busy !== null}
+                        className={
+                          order.upi
+                            ? "w-full rounded-full border border-paper-ink/20 px-5 py-3 font-medium hover:bg-paper-ink/5 disabled:opacity-50"
+                            : "w-full rounded-full bg-[#2f6fed] px-5 py-3.5 text-lg font-semibold text-white hover:bg-[#4580f7] disabled:opacity-50"
+                        }
+                      >
+                        {busy === "success"
+                          ? "Paying…"
+                          : `Pay ${inr(order.amount_paise)}${order.upi ? " (test)" : ""}`}
+                      </button>
+                      <button
+                        onClick={() => pay("failure")}
+                        disabled={busy !== null}
+                        className="w-full rounded-full border border-paper-ink/20 px-5 py-3 font-medium hover:bg-paper-ink/5 disabled:opacity-50"
+                      >
+                        {busy === "failure"
+                          ? "Declining…"
+                          : "Simulate a failed payment"}
+                      </button>
+                      <button
+                        onClick={() => pay("success_no_webhook")}
+                        disabled={busy !== null}
+                        className="w-full px-5 py-2 text-sm text-paper-muted underline-offset-2 hover:underline disabled:opacity-50"
+                      >
+                        Pay, but drop the merchant notification
+                      </button>
+                      {error ? (
+                        <p role="alert" className="text-sm text-rose-700">
+                          {error}
+                        </p>
+                      ) : null}
+                    </div>
                   ) : null}
-                </div>
+                </>
               )}
             </>
           )}
         </section>
-        <p className="text-center font-mono text-xs break-all text-paper-muted">Order {orderId}</p>
+        <p className="text-center font-mono text-xs break-all text-paper-muted">
+          Order {orderId}
+        </p>
       </div>
     </main>
   );

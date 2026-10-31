@@ -15,6 +15,7 @@ from uuid import UUID
 from psycopg import AsyncConnection
 from psycopg.types.json import Jsonb
 
+from ..config import get_settings
 from ..db import app_now, app_today, fetch_all, fetch_one
 from ..money import IST
 from .email import EmailError, render_payment_email, send_email
@@ -246,7 +247,10 @@ async def send_invoice_email(conn: AsyncConnection, merchant_id: UUID, invoice_i
         if not is_public_url(inv["qr_image_url"]):
             qr_b64 = await _fetch_qr_b64(inv["qr_image_url"])
     today = await app_today(conn)
+    s = get_settings()
     subject, body, attachments = render_payment_email(
+        upi_payee=(f"{s.merchant_upi_name or merchant['name']} · {s.merchant_upi_id}"
+                   if s.mock_mode and s.merchant_upi_id else None),
         kind=kind,
         merchant_name=merchant["name"],
         payer_name=inv["payer_name"],
@@ -298,6 +302,32 @@ async def _fetch_qr_b64(url: str) -> str | None:
     except httpx.HTTPError as e:
         log.warning("could not fetch QR %s: %s", url, e)
         return None
+
+
+async def mark_paid(conn: AsyncConnection, merchant_id: UUID, invoice_id: UUID) -> dict:
+    """The money reached the shop outside Paytm (straight to its UPI ID, or cash): record the payment
+    and close the invoice. Paytm sends no notification for those, so the merchant confirms them."""
+    async with conn.transaction():
+        inv = await fetch_one(
+            conn, "select * from invoices where id = %s and merchant_id = %s for update", (invoice_id, merchant_id)
+        )
+        if inv is None:
+            raise InvoiceError(404, "Invoice not found")
+        if inv["status"] not in ("sent", "overdue"):
+            raise InvoiceError(409, f"Invoice {inv['number']} is already {inv['status']}")
+        now = await app_now(conn)
+        await conn.execute(
+            "insert into transactions (merchant_id, payer_id, amount_paise, paid_at, source, payment_mode, "
+            "description, invoice_id) values (%s, %s, %s, %s, 'manual', 'UPI', %s, %s)",
+            (merchant_id, inv["payer_id"], inv["amount_paise"], now, f"Invoice {inv['number']}", invoice_id),
+        )
+        await conn.execute(
+            "update invoices set status = 'paid', paid_at = %s, overdue_reminder_pending = false where id = %s",
+            (now, invoice_id),
+        )
+    result = await get_invoice(conn, merchant_id, invoice_id)
+    assert result
+    return result
 
 
 async def remind(conn: AsyncConnection, merchant_id: UUID, invoice_id: UUID, during_call: UUID | None = None) -> dict:

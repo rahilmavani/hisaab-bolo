@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     paytm_website: str = "WEBSTAGING"
     paytm_mock_key: str = "HisaabMockKey#01"
     paytm_mock_mid: str = "HISAAB00MOCK0000001"
+    # The shop's own UPI ID. In mock mode, invoice QR codes and the pay page's "Pay with UPI app" button
+    # send real money straight to it (no Paytm notification, so the merchant marks those invoices paid).
+    merchant_upi_id: str = ""
+    merchant_upi_name: str = ""
 
     # Reminder calls through a Sarvam voice agent on the merchant's Twilio connection.
     # sarvam = real calls; mock = pretend the customer picked up and promised to pay; log = record only.

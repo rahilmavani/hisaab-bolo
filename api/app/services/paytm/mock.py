@@ -14,7 +14,7 @@ import httpx
 from ...config import get_settings
 from ...db import app_now, connection, fetch_one
 from ...money import IST, paise_to_amount_str
-from ..qr import qr_png_b64, upi_uri
+from ..qr import qr_png_b64, upi_pay_uri, upi_uri
 from .base import LinkRequest, LinkResult, PaytmError, QrRequest, QrResult, StatusResult
 from .checksum import sign_form
 
@@ -42,7 +42,12 @@ class MockPaytm:
         return LinkResult(link_id=link_id, short_url=short_url, order_id=req.order_id, raw=raw)
 
     async def create_qr(self, req: QrRequest) -> QrResult:
-        data = upi_uri("mock@paytm", req.display_name, req.amount_paise, req.order_id, req.invoice_number)
+        s = get_settings()
+        if s.merchant_upi_id:  # a real, payable QR to the shop's own UPI ID, amount filled in
+            data = upi_pay_uri(s.merchant_upi_id, s.merchant_upi_name or req.display_name, req.amount_paise,
+                               f"{req.invoice_number} {req.display_name}")
+        else:
+            data = upi_uri("mock@paytm", req.display_name, req.amount_paise, req.order_id, req.invoice_number)
         async with connection() as conn:
             await conn.execute(
                 "insert into paytm_mock_orders (order_id, kind, amount_paise) values (%s, 'qr', %s) "

@@ -20,15 +20,15 @@ export function PayerRow({ payer }: { payer: Payer }) {
   return (
     <Link
       href={`/customers/${payer.id}`}
-      className="flex items-center gap-4 rounded-2xl border border-line bg-white/[0.03] px-4 py-3.5 transition-colors hover:border-line-strong hover:bg-white/[0.06]"
+      className="flex items-center gap-4 rounded-xl border border-line bg-card px-4 py-3 transition-colors hover:border-line-strong hover:bg-raised/60"
     >
-      <Avatar name={payer.display_name} />
+      <Avatar name={payer.display_name} size={40} />
       <div className="min-w-0 flex-1">
-        <p className="flex min-w-0 items-baseline gap-1.5 text-[1.05rem] font-semibold text-text">
+        <p className="flex min-w-0 items-baseline gap-1.5 text-[15px] font-medium text-text">
           <span className="max-w-[65%] shrink-0 truncate">{payer.display_name}</span>
           {payer.vpa ? <span className="min-w-0 truncate font-normal text-muted">· {payer.vpa}</span> : null}
         </p>
-        <p className="truncate text-[0.95rem] text-muted">{payer.habit}</p>
+        <p className="truncate text-sm text-muted">{payer.habit}</p>
       </div>
       <div className="flex shrink-0 gap-2">
         {payer.badges.map((b, i) => (
@@ -51,8 +51,8 @@ export function PayerSearchBox({
   autoFocus?: boolean;
 }) {
   return (
-    <label className="flex items-center gap-3 rounded-full border border-line-strong bg-white/[0.04] px-5 py-3 focus-within:border-sky">
-      <Search size={18} className="shrink-0 text-muted" aria-hidden />
+    <label className="flex h-11 items-center gap-2.5 rounded-[10px] border border-line-strong bg-card px-3.5 focus-within:border-blue">
+      <Search size={16} className="shrink-0 text-faint" aria-hidden />
       <span className="sr-only">Search customers</span>
       <input
         type="search"
@@ -61,15 +61,13 @@ export function PayerSearchBox({
         data-autofocus={autoFocus || undefined}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search by name, UPI ID or phone"
-        className="min-w-0 flex-1 bg-transparent text-[1.05rem] text-text outline-none placeholder:text-faint focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
+        className="min-w-0 flex-1 bg-transparent text-[15px] text-text outline-none placeholder:text-faint focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
       />
       {value ? (
         <button type="button" onClick={() => onChange("")} aria-label="Clear search" className="text-muted hover:text-text">
           <X size={16} />
         </button>
-      ) : (
-        <span className="hidden text-sm text-faint sm:inline">Customer search</span>
-      )}
+      ) : null}
     </label>
   );
 }

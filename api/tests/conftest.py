@@ -8,6 +8,7 @@ os.environ["DEMO_CUSTOMER_PHONE"] = ""
 os.environ["DEMO_CALL_PHONES"] = ""  # the seeded story keeps its made-up numbers
 os.environ["RUN_SCHEDULER"] = "false"
 os.environ["AGENT_WARMUP"] = "false"
+os.environ["MERCHANT_UPI_ID"] = ""  # tests don't depend on the developer's own UPI ID; UPI tests set one
 
 import httpx  # noqa: E402
 import psycopg  # noqa: E402

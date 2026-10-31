@@ -56,7 +56,8 @@ SPEC_JSONB = {
 
 # Enumerations written as name[a|b|c] in the spec.
 SPEC_ENUMS = {
-    ("transactions", "source"): {"seed", "paytm_link", "paytm_qr", "mock"},
+    # + "manual" (migration 7): money that reached the shop outside Paytm, confirmed with "Mark as paid".
+    ("transactions", "source"): {"seed", "paytm_link", "paytm_qr", "mock", "manual"},
     ("transactions", "description_by"): {"ai", "merchant"},
     ("invoices", "status"): {"draft", "sent", "overdue", "paid", "cancelled"},
     ("recurring_schedules", "cadence"): {"weekly", "monthly"},

@@ -6,7 +6,10 @@ import type { Page } from "@playwright/test";
 /** Demo login comes from env or the repo's .env.example (a local test account created by the seed). */
 export function demoCredentials(): { email: string; password: string } {
   const env: Record<string, string> = {};
-  for (const line of readFileSync(join(__dirname, "../../.env.example"), "utf8").split("\n")) {
+  for (const line of readFileSync(
+    join(__dirname, "../../.env.example"),
+    "utf8",
+  ).split("\n")) {
     const m = line.match(/^([A-Z_]+)=(.*)$/);
     if (m) env[m[1]] = m[2];
   }
@@ -20,11 +23,18 @@ export const EVIDENCE = join(__dirname, "../../evidence");
 
 /** Restore the seeded story after a spec that pays, invoices or schedules things. */
 export function reseed() {
-  execFileSync("uv", ["run", "python", "-m", "app.seed"], { cwd: join(__dirname, "../../api"), stdio: "ignore" });
+  if (process.env.E2E_SKIP_SEED) return; // keep data someone is using (like global-setup)
+  execFileSync("uv", ["run", "python", "-m", "app.seed"], {
+    cwd: join(__dirname, "../../api"),
+    stdio: "ignore",
+  });
 }
 
 export async function shot(page: Page, milestone: string, name: string) {
-  await page.screenshot({ path: join(EVIDENCE, milestone, `${name}.png`), fullPage: true });
+  await page.screenshot({
+    path: join(EVIDENCE, milestone, `${name}.png`),
+    fullPage: true,
+  });
 }
 
 /** Collects console errors and failed API calls so each test can assert there were none. */
@@ -35,7 +45,8 @@ export function watchErrors(page: Page) {
   });
   page.on("pageerror", (err) => errors.push(`pageerror: ${err.message}`));
   page.on("response", (res) => {
-    if (res.url().includes(":8000") && res.status() >= 400) errors.push(`api ${res.status()}: ${res.url()}`);
+    if (res.url().includes(":8000") && res.status() >= 400)
+      errors.push(`api ${res.status()}: ${res.url()}`);
   });
   return errors;
 }

@@ -22,7 +22,7 @@ type CallPromise = {
 
 const STATE: Record<CallPromise["promise_state"], { label: (d: string | null) => string; tone: string }> = {
   broken: { label: (d) => `Promised ${d ? dateOnly(d) : ""}, still unpaid`, tone: "text-amber" },
-  today: { label: () => "Promised today", tone: "text-sky" },
+  today: { label: () => "Promised today", tone: "text-text" },
   upcoming: { label: (d) => `Promised by ${d ? dateOnly(d) : ""}`, tone: "text-muted" },
   none: { label: () => "Said they'll pay", tone: "text-muted" },
 };
@@ -56,7 +56,7 @@ export function PromisedPayments() {
                     : "border-line hover:border-line-strong",
                 )}
               >
-                <Phone size={16} className="mt-1 shrink-0 text-sky" aria-hidden />
+                <Phone size={16} className="mt-1 shrink-0 text-blue" aria-hidden />
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-baseline justify-between gap-x-3">
                     <span className="font-semibold">{r.payer_name}</span>
