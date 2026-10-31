@@ -16,6 +16,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { CallHistoryItem } from "@/components/call-status";
 import { invoiceStatusLabel } from "@/components/invoice-status";
+import { MarkPaid } from "@/components/mark-paid";
 import { ErrorNote, Skeleton } from "@/components/ui";
 import { ApiError, api, useApi } from "@/lib/api";
 import { dateOnly, inr, istDate, istTime } from "@/lib/format";
@@ -251,7 +252,11 @@ export default function InvoicePage() {
               className={clsx("mt-0.5 text-2xl font-semibold", status.tone)}
               data-testid="invoice-status"
             >
-              {inv.status === "paid" ? "Paid · auto-matched" : status.text}
+              {inv.status === "paid"
+                ? inv.payment?.source === "manual"
+                  ? "Paid · marked by you"
+                  : "Paid · auto-matched"
+                : status.text}
             </p>
             {inv.payment ? (
               <p className="mt-1 text-sm text-muted">
@@ -301,6 +306,12 @@ export default function InvoicePage() {
                   <RefreshCw size={16} aria-hidden />{" "}
                   {busy === "check" ? "Checking with Paytm…" : "Check payment"}
                 </button>
+                <MarkPaid
+                  invoiceId={inv.id}
+                  number={inv.number}
+                  amountPaise={inv.amount_paise}
+                  onDone={() => mutate()}
+                />
                 {!reminderTo ? (
                   <p className="text-sm text-muted">
                     Add an email to {inv.payer_name} to send reminders.
@@ -441,7 +452,11 @@ export default function InvoicePage() {
               ) : null}
               {inv.payment ? (
                 <li>
-                  <span className="text-mint">Paid and matched</span>{" "}
+                  <span className="text-mint">
+                    {inv.payment.source === "manual"
+                      ? "Marked paid by you"
+                      : "Paid and matched"}
+                  </span>{" "}
                   <span className="text-muted">
                     {istDate(inv.payment.paid_at)},{" "}
                     {istTime(inv.payment.paid_at)}

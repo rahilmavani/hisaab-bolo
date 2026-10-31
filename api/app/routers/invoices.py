@@ -111,6 +111,14 @@ async def check(invoice_id: UUID, merchant: CurrentMerchant, conn: Conn):
     return {**outcome, "invoice": await svc.get_invoice(conn, merchant.id, invoice_id)}
 
 
+@router.post("/{invoice_id}/mark-paid")
+async def mark_paid(invoice_id: UUID, merchant: CurrentMerchant, conn: Conn):
+    try:
+        return await svc.mark_paid(conn, merchant.id, invoice_id)
+    except svc.InvoiceError as e:
+        _raise(e)
+
+
 @router.post("/{invoice_id}/cancel")
 async def cancel(invoice_id: UUID, merchant: CurrentMerchant, conn: Conn):
     try:

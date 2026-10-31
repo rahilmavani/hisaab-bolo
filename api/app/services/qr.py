@@ -15,6 +15,13 @@ def upi_uri(vpa: str, payee: str, amount_paise: int, order_id: str, note: str) -
     )
 
 
+def upi_pay_uri(vpa: str, payee: str, amount_paise: int, note: str) -> str:
+    """A UPI payment request to a plain UPI ID, amount filled in. No merchant-only fields (tr, mc):
+    a personal UPI ID isn't a registered merchant, and apps may refuse those fields for one."""
+    return (f"upi://pay?pa={quote(vpa, safe='@')}&pn={quote(payee)}&am={paise_to_amount_str(amount_paise)}"
+            f"&cu=INR&tn={quote(note[:50])}")
+
+
 def qr_png_b64(data: str) -> str:
     qr = qrcode.QRCode(error_correction=ERROR_CORRECT_M, box_size=10, border=2)
     qr.add_data(data)

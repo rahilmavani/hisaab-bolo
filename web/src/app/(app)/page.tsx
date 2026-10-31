@@ -4,7 +4,12 @@ import clsx from "clsx";
 import { TrendingDown } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { COMPARE, PeakHoursHeatmap, TrendChart, type Grain } from "@/components/charts";
+import {
+  COMPARE,
+  PeakHoursHeatmap,
+  TrendChart,
+  type Grain,
+} from "@/components/charts";
 import { InvoiceStatusText } from "@/components/invoice-status";
 import { PayerSearch } from "@/components/payer-search";
 import { PromisedPayments } from "@/components/promised-payments";
@@ -27,9 +32,30 @@ const RANGES: {
   now: string;
   before: string;
 }[] = [
-  { key: "7d", label: "7 days", days: 7, grain: "day", now: "Last 7 days", before: "7 days before" },
-  { key: "30d", label: "30 days", days: 30, grain: "day", now: "Last 30 days", before: "30 days before" },
-  { key: "90d", label: "90 days", days: 91, grain: "week", now: "Last 13 weeks", before: "13 weeks before" },
+  {
+    key: "7d",
+    label: "7 days",
+    days: 7,
+    grain: "day",
+    now: "Last 7 days",
+    before: "7 days before",
+  },
+  {
+    key: "30d",
+    label: "30 days",
+    days: 30,
+    grain: "day",
+    now: "Last 30 days",
+    before: "30 days before",
+  },
+  {
+    key: "90d",
+    label: "90 days",
+    days: 91,
+    grain: "week",
+    now: "Last 13 weeks",
+    before: "13 weeks before",
+  },
 ];
 
 /** The calendar date `days` before an ISO date, as YYYY-MM-DD. */
@@ -288,7 +314,10 @@ export default function DashboardPage() {
                 ))}
                 {data.outstanding.recently_paid.length ? (
                   <tr>
-                    <td colSpan={3} className="pt-5 pb-1 text-[13px] text-faint">
+                    <td
+                      colSpan={3}
+                      className="pt-5 pb-1 text-[13px] text-faint"
+                    >
                       Paid recently
                     </td>
                   </tr>
@@ -310,7 +339,11 @@ export default function DashboardPage() {
                       {inr(inv.amount_paise)}
                     </td>
                     <td className="py-3 pl-6">
-                      <InvoiceStatusText status="paid" dueInDays={0} />
+                      <InvoiceStatusText
+                        status="paid"
+                        dueInDays={0}
+                        markedPaid={inv.marked_paid}
+                      />
                     </td>
                   </tr>
                 ))}

@@ -158,6 +158,7 @@ export type DashboardSummary = {
       payer_name: string;
       amount_paise: number;
       paid_at: string;
+      marked_paid: boolean;
     }[];
   };
 };
