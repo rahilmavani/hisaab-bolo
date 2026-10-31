@@ -14,12 +14,15 @@ Cast (from the pitch deck):
 from __future__ import annotations
 
 import argparse
+import base64
 import math
 import random
 import secrets
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
+from time import monotonic, sleep
 
 import httpx
 import psycopg
@@ -27,8 +30,10 @@ from psycopg.types.json import Jsonb
 
 from .config import get_settings
 from .money import IST
+from .services.qr import qr_png_b64, upi_uri
 
 MERCHANT_NAME = "Gupta Kirana Store"
+LIVE_TABLES = "public.invoices, public.transactions, public.reminders"  # what the dashboard listens to
 HISTORY_DAYS = 90
 WALKIN_BASE_PER_DAY = 72
 TODAY_WALKIN_FACTOR = 0.35  # today runs slow, so the slow-day banner has something to say
@@ -433,14 +438,50 @@ def generate(now: datetime) -> tuple[list[Payer], list[Txn], list[Invoice]]:
     return cast, txns, invoices
 
 
+def seed_payment_artifacts(conn: psycopg.Connection, s, merchant_id: uuid.UUID, invoices: list[Invoice]) -> None:
+    """Open invoices get a (mock) Paytm link and QR, exactly like invoices created in the app."""
+    if not s.mock_mode:
+        return  # with a real MID, create links through the API instead
+    headers = {"apikey": s.supabase_secret_key, "Authorization": f"Bearer {s.supabase_secret_key}",
+               "Content-Type": "image/png", "x-upsert": "true"}
+    for inv in invoices:
+        if inv.status not in ("sent", "overdue"):
+            continue
+        n = conn.execute("select nextval('paytm_mock_link_seq')").fetchone()[0]
+        link_id, link_url = f"MOCK_LI_{n}", f"{s.public_web_base}/mock-pay/{inv.order_id}"
+        conn.execute(
+            "insert into paytm_mock_orders (order_id, merchant_id, kind, link_id, amount_paise) "
+            "values (%s, %s, 'link', %s, %s) on conflict (order_id) do nothing",
+            (inv.order_id, merchant_id, link_id, inv.amount_rupees * 100),
+        )
+        data = upi_uri("mock@paytm", MERCHANT_NAME, inv.amount_rupees * 100, inv.order_id, inv.number)
+        path = f"{merchant_id}/{inv.order_id}.png"
+        r = httpx.post(f"{s.supabase_url}/storage/v1/object/qr/{path}", headers=headers,
+                       content=base64.b64decode(qr_png_b64(data)), timeout=20)
+        r.raise_for_status()
+        conn.execute(
+            "update invoices set link_id = %s, link_url = %s, qr_image_url = %s, paytm_raw = %s where id = %s",
+            (link_id, link_url, f"{s.supabase_url}/storage/v1/object/public/qr/{path}",
+             Jsonb({"link": {"mock": True, "linkId": link_id, "shortUrl": link_url}, "qr_data": data}), inv.id),
+        )
+
+
 def ensure_demo_user(conn: psycopg.Connection, s) -> uuid.UUID:
     row = conn.execute("select id from auth.users where email = %s", (s.demo_merchant_email,)).fetchone()
     headers = {"apikey": s.supabase_secret_key, "Authorization": f"Bearer {s.supabase_secret_key}"}
     if row:
         user_id = row[0]
-        r = httpx.put(f"{s.supabase_url}/auth/v1/admin/users/{user_id}", headers=headers,
-                      json={"password": s.demo_merchant_password, "email_confirm": True}, timeout=20)
-        r.raise_for_status()
+        # Resetting the password signs out every open session (a re-seed mid-demo would log the
+        # merchant out), so only do it when the stored password or confirmation is off.
+        ok = conn.execute(
+            "select encrypted_password = extensions.crypt(%s, encrypted_password) and email_confirmed_at is not null "
+            "from auth.users where id = %s",
+            (s.demo_merchant_password, user_id),
+        ).fetchone()[0]
+        if not ok:
+            r = httpx.put(f"{s.supabase_url}/auth/v1/admin/users/{user_id}", headers=headers,
+                          json={"password": s.demo_merchant_password, "email_confirm": True}, timeout=20)
+            r.raise_for_status()
         return user_id
     r = httpx.post(f"{s.supabase_url}/auth/v1/admin/users", headers=headers, timeout=20, json={
         "email": s.demo_merchant_email,
@@ -464,6 +505,96 @@ def demo_instant(real_now: datetime) -> tuple[datetime, bool]:
         return datetime.combine(local.date(), DEMO_PIN_TIME, tzinfo=IST), True
     return local, False
 
+def _rebuild(conn: psycopg.Connection, s, user_id, now: datetime):
+    """Wipe and recreate the demo merchant (one transaction; the caller commits)."""
+    today = now.date()
+    conn.execute("delete from merchants where owner_user_id = %s", (user_id,))
+    merchant_id = conn.execute(
+        "insert into merchants (name, owner_user_id, paytm_mid) values (%s, %s, %s) returning id",
+        (MERCHANT_NAME, user_id, s.paytm_mid_active),
+    ).fetchone()[0]
+
+    cast, txns, invoices = generate(now)
+
+    with conn.cursor() as cur:
+        cur.executemany(
+            "insert into payers (id, merchant_id, display_name, email, phone, gstin, notes, created_at) "
+            "values (%s, %s, %s, %s, %s, %s, %s, %s)",
+            [(p.id, merchant_id, p.name, p.email, p.phone, p.gstin, p.notes,
+              at(today - timedelta(days=p.start_days_ago), 6 * 60 + 15)) for p in cast],
+        )
+        idents = []
+        for p in cast:
+            idents.append((p.id, merchant_id, "vpa", p.vpa))
+            if p.phone:
+                idents.append((p.id, merchant_id, "phone", p.phone))
+            if p.email:
+                idents.append((p.id, merchant_id, "email", p.email))
+        cur.executemany(
+            "insert into payer_identifiers (payer_id, merchant_id, kind, value) values (%s, %s, %s, %s)",
+            idents,
+        )
+        cur.executemany(
+            "insert into invoices (id, merchant_id, number, payer_id, amount_paise, line_items, gst_taxable, "
+            "payer_gstin, due_date, status, email_to, paytm_order_id, sent_at, paid_at, created_at) "
+            "values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            [(inv.id, merchant_id, inv.number, inv.payer.id, inv.amount_rupees * 100, Jsonb(inv.items),
+              inv.gst, inv.payer.gstin if inv.gst else None, inv.due, inv.status, inv.payer.email,
+              inv.order_id, inv.created, inv.paid_at, inv.created) for inv in invoices],
+        )
+        cur.execute("update merchants set invoice_seq = %s where id = %s",
+                    (int(invoices[-1].number.split("-")[1]), merchant_id))
+        with cur.copy(
+            "copy transactions (merchant_id, payer_id, amount_paise, paid_at, source, paytm_order_id, "
+            "paytm_txn_id, payment_mode, description, category, gst_taxable, invoice_id) from stdin"
+        ) as copy:
+            for t in sorted(txns, key=lambda t: t.paid_at):
+                copy.write_row((merchant_id, t.payer.id if t.payer else None, t.amount_paise, t.paid_at,
+                                "seed", t.paytm_order_id, t.paytm_txn_id, t.payment_mode,
+                                t.description, t.category, t.gst_taxable, t.invoice_id))
+        # Reminder history for the overdue invoice (the original invoice email).
+        for inv in invoices:
+            if inv.status in ("sent", "overdue"):
+                cur.execute(
+                    "insert into reminders (merchant_id, invoice_id, kind, to_email, sent_at) "
+                    "values (%s, %s, 'invoice', %s, %s)",
+                    (merchant_id, inv.id, inv.payer.email, inv.created),
+                )
+        seed_payment_artifacts(conn, s, merchant_id, invoices)
+        # Mock gateway orders left behind by deleted test merchants.
+        cur.execute("delete from paytm_mock_orders o where not exists (select 1 from invoices i "
+                    "where i.paytm_order_id = o.order_id or i.qr_order_id = o.order_id)")
+    return merchant_id, cast, txns, invoices
+
+
+@contextmanager
+def realtime_paused(conn: psycopg.Connection):
+    """Keep a re-seed's ~16k row changes away from Realtime subscribers.
+
+    Realtime (wal2json) reads the publication's table list each time it polls, so the tables must
+    be out of the publication from before the rewrite until Realtime has read past it. Otherwise
+    the flood trips its per-second message limit and real updates get dropped."""
+    conn.execute(f"alter publication supabase_realtime drop table {LIVE_TABLES}")
+    conn.commit()
+    try:
+        yield
+    finally:
+        conn.rollback()
+        target = conn.execute("select pg_current_wal_lsn()").fetchone()[0]
+        deadline = monotonic() + 30
+        while monotonic() < deadline:
+            behind = conn.execute(
+                "select count(*) from pg_replication_slots where plugin = 'wal2json' and active "
+                "and slot_name like 'supabase_realtime%%' and confirmed_flush_lsn < %s::pg_lsn",
+                (target,),
+            ).fetchone()[0]
+            conn.rollback()
+            if not behind:
+                break
+            sleep(0.2)
+        conn.execute(f"alter publication supabase_realtime add table {LIVE_TABLES}")
+        conn.commit()
+
 
 def seed(now: datetime | None = None, verbose: bool = True) -> dict:
     s = get_settings()
@@ -473,65 +604,19 @@ def seed(now: datetime | None = None, verbose: bool = True) -> dict:
         if now is None:
             now, pinned = demo_instant(conn.execute("select now()").fetchone()[0])
         now = now.astimezone(IST)
+        # The seed's clock is also the demo clock's "reset" point.
         if pinned:
-            conn.execute("update app_clock set override_now = %s, set_at = now() where id = 1", (now,))
+            conn.execute("update app_clock set override_now = %s, set_at = now(), base_override_now = %s, "
+                         "base_set_at = now() where id = 1", (now, now))
         else:
-            conn.execute("update app_clock set override_now = null, set_at = null where id = 1")
+            conn.execute("update app_clock set override_now = null, set_at = null, base_override_now = null, "
+                         "base_set_at = null where id = 1")
         today = now.date()
-
-        conn.execute("delete from merchants where owner_user_id = %s", (user_id,))
-        merchant_id = conn.execute(
-            "insert into merchants (name, owner_user_id, paytm_mid) values (%s, %s, %s) returning id",
-            (MERCHANT_NAME, user_id, s.paytm_mid_active),
-        ).fetchone()[0]
-
-        cast, txns, invoices = generate(now)
-
-        with conn.cursor() as cur:
-            cur.executemany(
-                "insert into payers (id, merchant_id, display_name, email, phone, gstin, notes, created_at) "
-                "values (%s, %s, %s, %s, %s, %s, %s, %s)",
-                [(p.id, merchant_id, p.name, p.email, p.phone, p.gstin, p.notes,
-                  at(today - timedelta(days=p.start_days_ago), 6 * 60 + 15)) for p in cast],
-            )
-            idents = []
-            for p in cast:
-                idents.append((p.id, merchant_id, "vpa", p.vpa))
-                if p.phone:
-                    idents.append((p.id, merchant_id, "phone", p.phone))
-                if p.email:
-                    idents.append((p.id, merchant_id, "email", p.email))
-            cur.executemany(
-                "insert into payer_identifiers (payer_id, merchant_id, kind, value) values (%s, %s, %s, %s)",
-                idents,
-            )
-            cur.executemany(
-                "insert into invoices (id, merchant_id, number, payer_id, amount_paise, line_items, gst_taxable, "
-                "payer_gstin, due_date, status, email_to, paytm_order_id, sent_at, paid_at, created_at) "
-                "values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                [(inv.id, merchant_id, inv.number, inv.payer.id, inv.amount_rupees * 100, Jsonb(inv.items),
-                  inv.gst, inv.payer.gstin if inv.gst else None, inv.due, inv.status, inv.payer.email,
-                  inv.order_id, inv.created, inv.paid_at, inv.created) for inv in invoices],
-            )
-            cur.execute("update merchants set invoice_seq = %s where id = %s",
-                        (int(invoices[-1].number.split("-")[1]), merchant_id))
-            with cur.copy(
-                "copy transactions (merchant_id, payer_id, amount_paise, paid_at, source, paytm_order_id, "
-                "paytm_txn_id, payment_mode, description, category, gst_taxable, invoice_id) from stdin"
-            ) as copy:
-                for t in sorted(txns, key=lambda t: t.paid_at):
-                    copy.write_row((merchant_id, t.payer.id if t.payer else None, t.amount_paise, t.paid_at,
-                                    "seed", t.paytm_order_id, t.paytm_txn_id, t.payment_mode,
-                                    t.description, t.category, t.gst_taxable, t.invoice_id))
-            # Reminder history for the overdue invoice (the original invoice email).
-            for inv in invoices:
-                if inv.status in ("sent", "overdue"):
-                    cur.execute(
-                        "insert into reminders (merchant_id, invoice_id, kind, to_email, sent_at) "
-                        "values (%s, %s, 'invoice', %s, %s)",
-                        (merchant_id, inv.id, inv.payer.email, inv.created),
-                    )
         conn.commit()
+
+        with realtime_paused(conn):
+            merchant_id, cast, txns, invoices = _rebuild(conn, s, user_id, now)
+            conn.commit()
 
     summary = {
         "merchant_id": str(merchant_id),

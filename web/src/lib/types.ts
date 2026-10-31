@@ -79,6 +79,7 @@ export type PayerProfile = Payer & {
     created_at: string;
     recurring_id: string | null;
     due_in_days: number;
+    grace_days: number;
   }[];
   recurring_suggestion?: {
     cadence: "weekly" | "monthly";
@@ -95,6 +96,7 @@ export type PayerProfile = Payer & {
     grace_days: number;
     auto_remind: boolean;
     active: boolean;
+    email: string | null;
   } | null;
 };
 
@@ -128,7 +130,12 @@ export type DashboardSummary = {
   } | null;
   lost_regulars: Payer[];
   recent: Txn[];
-  outstanding: { total_paise: number; customers: number; invoices: OpenInvoice[] };
+  outstanding: {
+    total_paise: number;
+    customers: number;
+    invoices: OpenInvoice[];
+    recently_paid: { id: string; number: string; payer_id: string; payer_name: string; amount_paise: number; paid_at: string }[];
+  };
 };
 
 export type LineItem = { name: string; qty: number; unit_price_paise: number };
@@ -160,6 +167,8 @@ export type Invoice = {
   created_at: string;
   last_reminded_at: string | null;
   reminder_count: number;
+  paytm_raw?: { last_failure?: { RESPMSG?: string; TXNDATE?: string; STATUS?: string } };
+  email_error?: string | null;
 };
 
 export type InvoiceDetail = Invoice & {

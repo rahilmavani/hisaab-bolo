@@ -17,13 +17,13 @@ router = APIRouter()
 
 @router.get("/me")
 async def me(merchant: CurrentMerchant, conn: Conn):
-    clock = await fetch_one(conn, "select override_now, set_at from app_clock where id = 1")
+    clock = await fetch_one(conn, "select override_now is distinct from base_override_now as moved from app_clock where id = 1")
     now = await app_now(conn)
     s = get_settings()
     return {
         "merchant": {"id": merchant.id, "name": merchant.name},
         "now": now,
-        "clock_overridden": bool(clock and clock["override_now"]),
+        "clock_overridden": bool(clock and clock["moved"]),
         "paytm_mode": s.paytm_mode,
         "demo_tools": s.mock_mode,
     }

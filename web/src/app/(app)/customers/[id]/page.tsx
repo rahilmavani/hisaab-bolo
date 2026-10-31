@@ -1,16 +1,19 @@
 "use client";
 
-import { ArrowLeft, Merge, PencilLine } from "lucide-react";
+import { ArrowLeft, FilePlus2, Merge, PencilLine } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useMe } from "@/components/app-shell";
 import { MonthlyBars } from "@/components/charts";
 import { InvoiceStatusText } from "@/components/invoice-status";
+import { NewInvoiceDialog } from "@/components/new-invoice-dialog";
 import { EditPayerDialog, MergeDialog } from "@/components/payer-dialogs";
 import { PaymentsTable } from "@/components/payments-table";
+import { RecurringCard } from "@/components/recurring-card";
 import { Avatar, Badge, ErrorNote, SectionTitle, Skeleton, StatTile } from "@/components/ui";
 import { ApiError, useApi } from "@/lib/api";
-import { dateOnly, inr, istDate } from "@/lib/format";
+import { dateOnly, inr, istDate, istISODate } from "@/lib/format";
 import type { PayerProfile, Txn } from "@/lib/types";
 
 const KIND_LABEL = { vpa: "UPI ID", phone: "Phone", email: "Email", paytm_cust_id: "Paytm customer ID" } as const;
@@ -21,6 +24,8 @@ export default function PayerPage() {
   const { data: p, error, isLoading, mutate } = useApi<PayerProfile>(`/payers/${id}`);
   const [editOpen, setEditOpen] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const { data: me } = useMe();
 
   useEffect(() => {
     if (p?.merged_into) router.replace(`/customers/${p.merged_into}`);
@@ -56,9 +61,9 @@ export default function PayerPage() {
       <BackLink />
 
       <section className="glass p-5 sm:p-7" aria-labelledby="payer-name">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+        <div className="flex flex-wrap items-start gap-5">
           <Avatar name={p.display_name} size={64} />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-[15rem] flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 id="payer-name" className="text-[1.8rem] leading-tight font-semibold tracking-tight">
                 {p.display_name}
@@ -73,7 +78,11 @@ export default function PayerPage() {
               {p.gstin ? <span className="font-mono whitespace-nowrap">· GSTIN {p.gstin}</span> : null}
             </p>
           </div>
-          <div className="flex shrink-0 flex-wrap gap-2">
+          {/* Beside the name when there's room; on its own line (buttons wrapping) when there isn't. */}
+          <div className="flex max-w-full min-w-0 flex-wrap gap-2">
+            <button className="btn btn-primary" onClick={() => setInvoiceOpen(true)} disabled={!me}>
+              <FilePlus2 size={16} aria-hidden /> New invoice
+            </button>
             <button className="btn btn-quiet" onClick={() => setEditOpen(true)}>
               <PencilLine size={16} aria-hidden /> Edit details
             </button>
@@ -102,13 +111,21 @@ export default function PayerPage() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-1 gap-6 @4xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="panel min-w-0 p-5 sm:p-6">
           <SectionTitle title="Payments" sub={`${p.txn_count} in total, newest first`} />
           <PaymentsTable txns={p.transactions} onChange={updateTxn} />
         </section>
 
         <div className="min-w-0 space-y-6">
+          {me ? (
+            <RecurringCard
+              payer={p}
+              today={istISODate(me.now)}
+              onChange={(np) => (np ? mutate(np, { revalidate: false }) : mutate())}
+            />
+          ) : null}
+
           <section className="panel p-5 sm:p-6">
             <SectionTitle title="Last 6 months" />
             <MonthlyBars months={p.monthly} />
@@ -134,7 +151,9 @@ export default function PayerPage() {
                 {p.invoices.map((inv) => (
                   <li key={inv.id} className="flex items-center justify-between gap-3 py-2.5 text-[0.95rem]">
                     <span>
-                      <span className="font-mono text-sm">{inv.number}</span>
+                      <Link href={`/collections/${inv.id}`} className="font-mono text-sm hover:text-sky">
+                        {inv.number}
+                      </Link>
                       <span className="block text-sm text-muted">Due {dateOnly(inv.due_date)}</span>
                     </span>
                     <span className="text-right">
@@ -143,6 +162,7 @@ export default function PayerPage() {
                         className="text-sm"
                         status={inv.status}
                         dueInDays={inv.due_in_days}
+                        graceDays={inv.grace_days}
                       />
                     </span>
                   </li>
@@ -169,6 +189,15 @@ export default function PayerPage() {
         onClose={() => setEditOpen(false)}
         onSaved={(np) => mutate(np, { revalidate: false })}
       />
+      {me ? (
+        <NewInvoiceDialog
+          key={`invoice-${p.id}-${invoiceOpen}`}
+          open={invoiceOpen}
+          onClose={() => setInvoiceOpen(false)}
+          today={istISODate(me.now)}
+          presetPayer={p}
+        />
+      ) : null}
       <MergeDialog
         key={`merge-${p.id}-${mergeOpen}`}
         payer={p}

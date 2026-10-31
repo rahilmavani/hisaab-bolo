@@ -7,7 +7,13 @@ import { useState } from "react";
 import { PeakHoursHeatmap, TrendChart, type Grain } from "@/components/charts";
 import { InvoiceStatusText } from "@/components/invoice-status";
 import { PayerSearch } from "@/components/payer-search";
-import { Avatar, ErrorNote, SectionTitle, Skeleton, StatTile } from "@/components/ui";
+import {
+  Avatar,
+  ErrorNote,
+  SectionTitle,
+  Skeleton,
+  StatTile,
+} from "@/components/ui";
 import { useApi } from "@/lib/api";
 import { dateOnly, hourLabel, inr, istDate, istTime, pct } from "@/lib/format";
 import type { DashboardSummary, TrendPoint } from "@/lib/types";
@@ -18,10 +24,18 @@ const RANGES: { key: string; label: string; days: number; grain: Grain }[] = [
   { key: "90d", label: "90 days", days: 91, grain: "week" },
 ];
 
-function TrendBlock({ fallback, isToday }: { fallback: TrendPoint[]; isToday: boolean }) {
+function TrendBlock({
+  fallback,
+  isToday,
+}: {
+  fallback: TrendPoint[];
+  isToday: boolean;
+}) {
   const [range, setRange] = useState(RANGES[0]);
   const { data } = useApi<{ points: TrendPoint[] }>(
-    range.key === "7d" ? null : `/dashboard/trend?days=${range.days}&grain=${range.grain}`,
+    range.key === "7d"
+      ? null
+      : `/dashboard/trend?days=${range.days}&grain=${range.grain}`,
     { keepPreviousData: true },
   );
   const points = range.key === "7d" ? fallback : (data?.points ?? fallback);
@@ -32,7 +46,11 @@ function TrendBlock({ fallback, isToday }: { fallback: TrendPoint[]; isToday: bo
           Collections, last {range.label}
           {range.grain === "week" ? " by week" : ""}
         </h2>
-        <div role="group" aria-label="Chart range" className="flex rounded-full border border-line p-0.5 text-sm">
+        <div
+          role="group"
+          aria-label="Chart range"
+          className="flex rounded-full border border-line p-0.5 text-sm"
+        >
           {RANGES.map((r) => (
             <button
               key={r.key}
@@ -40,7 +58,9 @@ function TrendBlock({ fallback, isToday }: { fallback: TrendPoint[]; isToday: bo
               aria-pressed={r.key === range.key}
               className={clsx(
                 "rounded-full px-3 py-1 transition-colors",
-                r.key === range.key ? "bg-blue text-white" : "text-muted hover:text-text",
+                r.key === range.key
+                  ? "bg-blue text-white"
+                  : "text-muted hover:text-text",
               )}
             >
               {r.label.replace(" days", "D")}
@@ -53,15 +73,28 @@ function TrendBlock({ fallback, isToday }: { fallback: TrendPoint[]; isToday: bo
   );
 }
 
-function SlowDayBanner({ slow }: { slow: NonNullable<DashboardSummary["slow_day"]> }) {
+function SlowDayBanner({
+  slow,
+}: {
+  slow: NonNullable<DashboardSummary["slow_day"]>;
+}) {
   return (
-    <div role="status" className="flex items-start gap-3 rounded-2xl border border-amber/25 bg-amber/[0.07] px-4 py-3.5">
-      <TrendingDown size={20} className="mt-0.5 shrink-0 text-amber" aria-hidden />
+    <div
+      role="status"
+      className="flex items-start gap-3 rounded-2xl border border-amber/25 bg-amber/[0.07] px-4 py-3.5"
+    >
+      <TrendingDown
+        size={20}
+        className="mt-0.5 shrink-0 text-amber"
+        aria-hidden
+      />
       <p className="text-[0.98rem] text-text">
-        Slow day: takings are {slow.drop_pct}% below a usual {slow.weekday} so far.{" "}
+        Slow day: takings are {slow.drop_pct}% below a usual {slow.weekday} so
+        far.{" "}
         <span className="text-muted">
-          {inr(slow.today_paise)} by {slow.as_of}, against an average of {inr(slow.baseline_paise)} by this time on the
-          last four {slow.weekday}s.
+          {inr(slow.today_paise)} by {slow.as_of}, against an average of{" "}
+          {inr(slow.baseline_paise)} by this time on the last four{" "}
+          {slow.weekday}s.
         </span>
       </p>
     </div>
@@ -69,11 +102,20 @@ function SlowDayBanner({ slow }: { slow: NonNullable<DashboardSummary["slow_day"
 }
 
 export default function DashboardPage() {
-  const { data, error, isLoading, mutate } = useApi<DashboardSummary>("/dashboard/summary", {
-    refreshInterval: 60_000,
-  });
+  const { data, error, isLoading, mutate } = useApi<DashboardSummary>(
+    "/dashboard/summary",
+    {
+      refreshInterval: 60_000,
+    },
+  );
 
-  if (error) return <ErrorNote message={`Couldn't load today's numbers: ${error.message}`} onRetry={() => mutate()} />;
+  if (error)
+    return (
+      <ErrorNote
+        message={`Couldn't load today's numbers: ${error.message}`}
+        onRetry={() => mutate()}
+      />
+    );
   if (isLoading || !data) return <DashboardSkeleton />;
 
   const k = data.kpis;
@@ -83,9 +125,15 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h1 className="text-[1.9rem] leading-tight font-semibold tracking-tight sm:text-[2.2rem]">Today’s hisaab</h1>
+          <h1 className="text-[1.9rem] leading-tight font-semibold tracking-tight sm:text-[2.2rem]">
+            Today’s hisaab
+          </h1>
           <p className="text-muted">
-            {dateOnly(data.date, { weekday: "long", day: "numeric", month: "long" })}
+            {dateOnly(data.date, {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            })}
             {data.is_today ? `, as of ${istTime(data.now)}` : ""}
           </p>
         </div>
@@ -93,26 +141,40 @@ export default function DashboardPage() {
 
       {data.slow_day?.is_slow ? <SlowDayBanner slow={data.slow_day} /> : null}
 
-      <section aria-label="Today at a glance" className="glass space-y-6 p-5 sm:p-7">
+      <section
+        aria-label="Today at a glance"
+        className="glass space-y-6 p-5 sm:p-7"
+      >
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
           <StatTile
             label="Collected today"
             value={inr(k.collected_paise)}
-            delta={k.change_vs_last_week === null ? null : { ratio: k.change_vs_last_week, vs: compareLabel }}
+            delta={
+              k.change_vs_last_week === null
+                ? null
+                : { ratio: k.change_vs_last_week, vs: compareLabel }
+            }
           />
           <StatTile
             label="Payments"
             value={k.payments.toLocaleString("en-IN")}
             sub={`${k.new_payers} new payer${k.new_payers === 1 ? "" : "s"}`}
           />
-          <StatTile label="Repeat customers" value={pct(k.repeat_share)} sub="of today’s volume" />
+          <StatTile
+            label="Repeat customers"
+            value={pct(k.repeat_share)}
+            sub="of today’s volume"
+          />
         </div>
         <TrendBlock fallback={data.trend} isToday={data.is_today} />
         <PayerSearch limit={5} />
       </section>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="panel min-w-0 p-5 sm:p-6" aria-labelledby="pending-title">
+      <div className="grid grid-cols-1 gap-6 @4xl:grid-cols-2">
+        <section
+          className="panel min-w-0 p-5 sm:p-6"
+          aria-labelledby="pending-title"
+        >
           <SectionTitle
             title="Pending payments"
             sub={
@@ -124,7 +186,8 @@ export default function DashboardPage() {
           <h2 id="pending-title" className="sr-only">
             Pending payments
           </h2>
-          {data.outstanding.invoices.length ? (
+          {data.outstanding.invoices.length ||
+          data.outstanding.recently_paid.length ? (
             <table className="w-full text-left text-[0.97rem]">
               <thead className="text-sm text-muted">
                 <tr className="border-b border-line">
@@ -135,23 +198,64 @@ export default function DashboardPage() {
               </thead>
               <tbody>
                 {data.outstanding.invoices.map((inv) => (
-                  <tr key={inv.id} className="border-b border-line last:border-0">
+                  <tr
+                    key={inv.id}
+                    className="border-b border-line last:border-0"
+                  >
                     <td className="py-3">
-                      <Link href={`/customers/${inv.payer_id}`} className="hover:text-sky">
+                      <Link
+                        href={`/customers/${inv.payer_id}`}
+                        className="hover:text-sky"
+                      >
                         {inv.payer_name}
                       </Link>
-                      <span className="block font-mono text-xs text-faint">{inv.number}</span>
+                      <span className="block font-mono text-xs text-faint">
+                        {inv.number}
+                      </span>
                     </td>
-                    <td className="num py-3 text-right font-mono">{inr(inv.amount_paise)}</td>
+                    <td className="num py-3 text-right font-mono">
+                      {inr(inv.amount_paise)}
+                    </td>
                     <td className="py-3 pl-4">
-                      <InvoiceStatusText status={inv.status} dueInDays={-inv.days_overdue} />
+                      <InvoiceStatusText
+                        status={inv.status}
+                        dueInDays={-inv.days_overdue}
+                        graceDays={inv.grace_days}
+                      />
+                    </td>
+                  </tr>
+                ))}
+                {data.outstanding.recently_paid.map((inv) => (
+                  <tr
+                    key={inv.id}
+                    className="border-b border-line last:border-0"
+                  >
+                    <td className="py-3">
+                      <Link
+                        href={`/collections/${inv.id}`}
+                        className="hover:text-sky"
+                      >
+                        {inv.payer_name}
+                      </Link>
+                      <span className="block font-mono text-xs text-faint">
+                        {inv.number}
+                      </span>
+                    </td>
+                    <td className="num py-3 text-right font-mono">
+                      {inr(inv.amount_paise)}
+                    </td>
+                    <td className="py-3 pl-4">
+                      <InvoiceStatusText status="paid" dueInDays={0} />
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p className="text-muted">Every invoice is paid. New invoices you send will show up here until they’re paid.</p>
+            <p className="text-muted">
+              Every invoice is paid. New invoices you send will show up here
+              until they’re paid.
+            </p>
           )}
         </section>
 
@@ -173,17 +277,22 @@ export default function DashboardPage() {
                       <p className="font-semibold">
                         {p.display_name}{" "}
                         <span className="font-normal text-amber">
-                          · last paid {Math.floor(p.days_since_last ?? 0)} days ago
+                          · last paid {Math.floor(p.days_since_last ?? 0)} days
+                          ago
                         </span>
                       </p>
-                      <p className="truncate text-sm text-muted">Usually {p.habit}</p>
+                      <p className="truncate text-sm text-muted">
+                        Usually {p.habit}
+                      </p>
                     </div>
                   </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-muted">All your regulars have paid on their usual rhythm.</p>
+            <p className="text-muted">
+              All your regulars have paid on their usual rhythm.
+            </p>
           )}
         </section>
 
@@ -200,22 +309,33 @@ export default function DashboardPage() {
         </section>
 
         <section className="panel min-w-0 p-5 sm:p-6">
-          <SectionTitle title="Latest payments" sub={data.is_today ? "Today" : dateOnly(data.date)} />
+          <SectionTitle
+            title="Latest payments"
+            sub={data.is_today ? "Today" : dateOnly(data.date)}
+          />
           {data.recent.length ? (
             <ul className="divide-y divide-line">
               {data.recent.map((t) => (
-                <li key={t.id} className="flex items-center justify-between gap-3 py-2.5">
+                <li
+                  key={t.id}
+                  className="flex items-center justify-between gap-3 py-2.5"
+                >
                   <div className="min-w-0">
                     <p className="truncate">
                       {t.payer_id ? (
-                        <Link href={`/customers/${t.payer_id}`} className="hover:text-sky">
+                        <Link
+                          href={`/customers/${t.payer_id}`}
+                          className="hover:text-sky"
+                        >
                           {t.payer_name}
                         </Link>
                       ) : (
                         <span className="text-muted">Walk-in</span>
                       )}
                     </p>
-                    <p className="truncate text-sm text-muted">{t.description ?? "Payment"}</p>
+                    <p className="truncate text-sm text-muted">
+                      {t.description ?? "Payment"}
+                    </p>
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="num font-mono">{inr(t.amount_paise)}</p>
@@ -225,7 +345,10 @@ export default function DashboardPage() {
               ))}
             </ul>
           ) : (
-            <p className="text-muted">No payments yet {data.is_today ? "today" : `on ${istDate(data.date)}`}.</p>
+            <p className="text-muted">
+              No payments yet{" "}
+              {data.is_today ? "today" : `on ${istDate(data.date)}`}.
+            </p>
           )}
         </section>
       </div>
@@ -235,10 +358,14 @@ export default function DashboardPage() {
 
 function DashboardSkeleton() {
   return (
-    <div className="mx-auto max-w-6xl space-y-6" aria-busy="true" aria-label="Loading">
+    <div
+      className="mx-auto max-w-6xl space-y-6"
+      aria-busy="true"
+      aria-label="Loading"
+    >
       <Skeleton className="h-14 w-72" />
       <Skeleton className="h-[460px] rounded-[28px]" />
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 @4xl:grid-cols-2">
         <Skeleton className="h-64" />
         <Skeleton className="h-64" />
       </div>

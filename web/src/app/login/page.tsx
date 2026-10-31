@@ -4,11 +4,21 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, type FormEvent } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
+/** Resolve `next` against this origin and only follow it if it stays here
+ * ("//evil.com", "/\\evil.com" and "/\t/evil.com" all resolve elsewhere and fall back to "/"). */
+function safeNext(raw: string | null): string {
+  if (!raw) return "/";
+  try {
+    const url = new URL(raw, window.location.origin);
+    return url.origin === window.location.origin ? url.pathname + url.search + url.hash : "/";
+  } catch {
+    return "/";
+  }
+}
+
 function LoginForm() {
   const router = useRouter();
-  const raw = useSearchParams().get("next") ?? "/";
-  // Only same-site paths: "//evil.com" and "/\\evil.com" would leave the app.
-  const next = raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/\\") ? raw : "/";
+  const raw = useSearchParams().get("next");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +34,7 @@ function LoginForm() {
       setError(error.message === "Invalid login credentials" ? "That email and password don't match." : error.message);
       return;
     }
-    router.replace(next);
+    router.replace(safeNext(raw));
     router.refresh();
   }
 

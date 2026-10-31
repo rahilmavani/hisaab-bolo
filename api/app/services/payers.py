@@ -46,6 +46,22 @@ def normalise_phone(value: str | None) -> str | None:
     return digits
 
 
+async def identifier_owner(conn: AsyncConnection, merchant_id: UUID, kind: str, value: str,
+                           payer_id: UUID) -> str | None:
+    """Name of another (unmerged) customer who already owns this phone/email, if any."""
+    owner = await fetch_one(
+        conn,
+        "select p.display_name from payer_identifiers i join payers p on p.id = i.payer_id "
+        "where i.merchant_id = %s and i.kind = %s and i.value = %s and i.payer_id <> %s",
+        (merchant_id, kind, value.strip().lower() if kind == "email" else value, payer_id),
+    )
+    return owner["display_name"] if owner else None
+
+
+def conflict_message(value: str, owner: str) -> str:
+    return f"{value} already belongs to {owner}. If they are the same person, merge the two customers instead."
+
+
 async def update_payer(conn: AsyncConnection, merchant_id: UUID, payer_id: UUID, changes: dict) -> None:
     fields = {k: v for k, v in changes.items() if k in EDITABLE}
     if "display_name" in fields:
@@ -73,15 +89,9 @@ async def update_payer(conn: AsyncConnection, merchant_id: UUID, payer_id: UUID,
         for field, kind in IDENTIFIER_FIELDS.items():
             value = fields.get(field)
             if value:
-                owner = await fetch_one(
-                    conn,
-                    "select p.display_name from payer_identifiers i join payers p on p.id = i.payer_id "
-                    "where i.merchant_id = %s and i.kind = %s and i.value = %s and i.payer_id <> %s",
-                    (merchant_id, kind, value, payer_id),
-                )
+                owner = await identifier_owner(conn, merchant_id, kind, value, payer_id)
                 if owner:
-                    raise PayerError(409, f"{value} already belongs to {owner['display_name']}. "
-                                          "If they are the same person, merge the two customers instead.")
+                    raise PayerError(409, conflict_message(value, owner))
         if fields:
             sets = ", ".join(f"{k} = %({k})s" for k in fields)
             await conn.execute(f"update payers set {sets} where id = %(id)s", {**fields, "id": payer_id})

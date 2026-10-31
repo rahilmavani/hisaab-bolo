@@ -15,6 +15,15 @@ from app.config import get_settings  # noqa: E402
 from app.seed import seed  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def no_real_ai_descriptions(monkeypatch):
+    """Paid webhooks and ticks describe payments with Claude; tests never call the real model
+    (tests about descriptions install their own fake on top of this)."""
+    async def none(_):
+        return None
+    monkeypatch.setattr("app.services.descriptions.generate", none)
+
+
 @pytest.fixture(scope="session")
 def settings():
     return get_settings()

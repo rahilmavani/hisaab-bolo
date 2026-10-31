@@ -1,7 +1,7 @@
 .PHONY: db env migrate seed api web tick test test-api test-e2e
 
 db:            ## start local Supabase (Postgres, Auth, Storage, Realtime)
-	supabase start -x vector,logflare,edge-runtime,imgproxy,studio
+	supabase start -x vector,logflare,edge-runtime,imgproxy,studio,postgres-meta
 
 env:           ## write .env.local and web/.env.local from the running local stack
 	./scripts/local-env.sh

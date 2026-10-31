@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     agent_model: str = "claude-haiku-5-5"
     agent_fallback_model: str = "claude-sonnet-5-5"
     agent_warmup: bool = True
+    ai_descriptions: bool = True
 
     demo_merchant_email: str = "demo@hisaabbolo.test"
     demo_merchant_password: str = "hisaab-demo-2026"

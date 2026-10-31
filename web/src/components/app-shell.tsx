@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { LayoutDashboard, LogOut, Users } from "lucide-react";
+import { LayoutDashboard, LogOut, ReceiptIndianRupee, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
@@ -9,10 +9,13 @@ import { useApi } from "@/lib/api";
 import { istDayLabel, istTime } from "@/lib/format";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { Me } from "@/lib/types";
+import { DemoClock } from "./demo-clock";
+import { LiveUpdates } from "./live-updates";
 
 const NAV = [
   { href: "/", label: "Today", icon: LayoutDashboard },
   { href: "/customers", label: "Customers", icon: Users },
+  { href: "/collections", label: "Collections", icon: ReceiptIndianRupee },
 ];
 
 export function useMe() {
@@ -69,13 +72,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
-        <div className="mt-auto space-y-3 text-sm">
+        <div className="mt-auto space-y-4 text-sm">
+          {me?.demo_tools ? <DemoClock me={me} /> : null}
           {me ? (
             <div>
               <p className="font-medium text-text">{me.merchant.name}</p>
-              <p className="text-muted">
-                {istDayLabel(me.now)}, {istTime(me.now)}
-              </p>
+              {!me.demo_tools ? (
+                <p className="text-muted">
+                  {istDayLabel(me.now)}, {istTime(me.now)}
+                </p>
+              ) : null}
             </div>
           ) : null}
           <button onClick={signOut} className="flex items-center gap-2 text-muted hover:text-text">
@@ -91,12 +97,20 @@ export function AppShell({ children }: { children: ReactNode }) {
             <LogOut size={18} />
           </button>
         </header>
-        <main className="min-w-0 flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-10 lg:pt-8 lg:pb-12">{children}</main>
+        {/* A size container: pages lay out by the space they get. */}
+        <main className="@container min-w-0 flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-10 lg:pt-8 lg:pb-12">
+          {children}
+          {me?.demo_tools ? (
+            <div className="mt-8 lg:hidden">
+              <DemoClock me={me} />
+            </div>
+          ) : null}
+        </main>
       </div>
 
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 border-t border-line bg-ink/90 backdrop-blur lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-line bg-ink/90 backdrop-blur lg:hidden"
       >
         {NAV.map(({ href, label, icon: Icon }) => (
           <Link
@@ -110,6 +124,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
         ))}
       </nav>
+
+      {me ? <LiveUpdates merchantId={me.merchant.id} /> : null}
     </div>
   );
 }

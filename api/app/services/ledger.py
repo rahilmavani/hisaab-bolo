@@ -195,15 +195,16 @@ async def payer_profile(conn: AsyncConnection, merchant_id: UUID, payer_id: UUID
         conn,
         """
         select id, number, amount_paise, due_date, status, link_url, paid_at, sent_at, created_at, recurring_id,
-               (due_date - app_today()) as due_in_days
+               grace_days, (due_date - app_today()) as due_in_days
           from invoices where merchant_id = %s and payer_id = %s order by created_at desc
         """,
         (merchant_id, payer_id),
     )
+    profile["recurring_suggestion"] = await recurring_suggestion(conn, payer_id, now) if not profile["recurring"] else None
     profile["recurring_schedule"] = await fetch_one(
         conn,
         """
-        select id, amount_paise, cadence, anchor_date, next_due_date, grace_days, auto_remind, active
+        select id, amount_paise, cadence, anchor_date, next_due_date, grace_days, auto_remind, active, email
           from recurring_schedules where payer_id = %s and active
         """,
         (payer_id,),
@@ -214,6 +215,41 @@ async def payer_profile(conn: AsyncConnection, merchant_id: UUID, payer_id: UUID
 async def get_transaction(conn: AsyncConnection, merchant_id: UUID, txn_id: UUID) -> dict | None:
     rows = await list_transactions(conn, merchant_id, txn_id=txn_id, limit=1)
     return rows[0] if rows else None
+
+
+async def recurring_suggestion(conn: AsyncConnection, payer_id: UUID, now: datetime) -> dict | None:
+    """Stretch: a steady amount with a gap of about 1, 7 or 30 days suggests a recurring schedule."""
+    row = await fetch_one(
+        conn,
+        """
+        with t as (
+          select amount_paise, extract(epoch from paid_at - lag(paid_at) over (order by paid_at)) / 86400.0 as gap
+            from transactions where payer_id = %s and paid_at > %s::timestamptz - interval '90 days'
+        )
+        select count(*)::int as n, mode() within group (order by amount_paise) as amount,
+               (percentile_cont(0.5) within group (order by gap))::float as gap
+          from t
+        """,
+        (payer_id, now),
+    )
+    if not row or row["n"] < 6 or row["gap"] is None:
+        return None
+    share = await fetch_one(
+        conn, "select avg((amount_paise = %s)::int)::float as s from transactions where payer_id = %s "
+        "and paid_at > %s::timestamptz - interval '90 days'", (row["amount"], payer_id, now))
+    if share["s"] < 0.7:
+        return None
+    gap = row["gap"]
+    if gap <= 1.3:
+        return {"cadence": "monthly", "every_days": 1, "amount_paise": row["amount"],
+                "suggested_amount_paise": row["amount"] * 30}
+    if 6 <= gap <= 8:
+        return {"cadence": "weekly", "every_days": 7, "amount_paise": row["amount"],
+                "suggested_amount_paise": row["amount"]}
+    if 26 <= gap <= 35:
+        return {"cadence": "monthly", "every_days": 30, "amount_paise": row["amount"],
+                "suggested_amount_paise": row["amount"]}
+    return None
 
 
 async def list_transactions(
@@ -396,10 +432,22 @@ async def outstanding(conn: AsyncConnection, merchant_id: UUID) -> dict:
         """,
         (merchant_id,),
     )
+    recently_paid = await fetch_all(
+        conn,
+        """
+        select i.id, i.number, i.payer_id, p.display_name as payer_name, i.amount_paise, i.due_date,
+               i.status, i.paid_at
+          from invoices i join payers p on p.id = i.payer_id
+         where i.merchant_id = %s and i.status = 'paid' and i.paid_at > app_now() - interval '7 days'
+         order by i.paid_at desc limit 3
+        """,
+        (merchant_id,),
+    )
     return {
         "total_paise": sum(r["amount_paise"] for r in rows),
         "customers": len({r["payer_id"] for r in rows}),
         "invoices": rows,
+        "recently_paid": recently_paid,
     }
 
 
