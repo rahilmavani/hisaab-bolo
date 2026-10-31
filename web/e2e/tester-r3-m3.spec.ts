@@ -74,7 +74,7 @@ test.describe("tester r3 · M3 regression", () => {
   test("merge dialog searches other customers and never offers the same payer", async ({ page }) => {
     await page.goto("/customers");
     await page.getByRole("searchbox").fill("Ram");
-    await page.getByRole("link", { name: /Ram · ram@paytm/ }).first().click();
+    await page.getByRole("link", { name: /Ram.*ram@paytm/ }).first().click();
     await page.getByRole("button", { name: "Merge duplicate" }).click();
     const dialog = page.getByRole("dialog", { name: "Merge into Ram" });
     await expect(dialog).toBeVisible();

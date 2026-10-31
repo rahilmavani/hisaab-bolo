@@ -80,11 +80,11 @@ test.describe("R2: customer search", () => {
   test("typing a phone the Indian way (+91 98765…) finds Ram before the number is finished", async ({ page }) => {
     await page.goto("/");
     await search(page, "+91 98765 43210");
-    await expect(page.getByRole("link", { name: /Ram · ram@paytm/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Ram.*ram@paytm/ })).toBeVisible();
     const partial = await search(page, "+91 98765");
     await page.screenshot({ path: join(EVIDENCE, "m3", "r2-pw-search-plus91-partial.png") });
     expect(partial.map((p) => p.display_name)).toContain("Ram");
-    await expect(page.getByRole("link", { name: /Ram · ram@paytm/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Ram.*ram@paytm/ })).toBeVisible();
   });
 
   test("names, UPI IDs and phones in several formats all find the right customer", async ({ page }) => {
@@ -116,8 +116,8 @@ test.describe("R2: dashboard on desktop reads like deck slide 4", () => {
     await expect(glance.getByText(/new payers?$/)).toBeVisible();
     await expect(page.getByRole("img", { name: /Collections by day, 7 points/ })).toBeVisible();
     await page.getByRole("searchbox").fill("ram");
-    const row = page.getByRole("link", { name: /Ram · ram@paytm/ });
-    await expect(row).toContainText(/₹100 daily, ~8:30 AM · 121 payments since \d+ \w+/);
+    const row = page.getByRole("link", { name: /Ram.*ram@paytm/ });
+    await expect(row).toContainText(/₹100 daily, ~8:30 AM.*121 payments since \d+ \w+/);
     await expect(row.getByText("Regular", { exact: true })).toBeVisible();
     await page.screenshot({ path: join(EVIDENCE, "m3", "r2-pw-desktop-dashboard-search-ram.png") });
     expect(errors).toEqual([]);

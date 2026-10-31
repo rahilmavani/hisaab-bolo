@@ -389,7 +389,6 @@ export function AskPanel({
           <MessageCircle size={16} className="text-muted" aria-hidden /> Ask
           Hisaab
         </h2>
-        <span className="text-sm text-muted">Hindi · English · Gujarati · more</span>
         <button
           onClick={onClose}
           aria-label="Close Ask Hisaab"
@@ -427,7 +426,7 @@ export function AskPanel({
         {turns.map((t) => (
           <div key={t.id} className="space-y-2.5">
             <div className="ml-auto w-fit max-w-[90%] rounded-[20px] rounded-br-md bg-blue px-4 py-3 text-white">
-              <p className="text-[1rem] leading-snug">
+              <p className="text-base leading-snug">
                 {t.question ? (
                   `“${t.question}”`
                 ) : (
@@ -435,7 +434,7 @@ export function AskPanel({
                 )}
               </p>
               {t.voice ? (
-                <p className="mt-1.5 flex items-center gap-2 font-mono text-xs opacity-90">
+                <p className="mt-1.5 flex items-center gap-2 num text-xs opacity-90">
                   <Waveform levels={t.voice.levels} />{" "}
                   {clock(t.voice.durationMs)}
                 </p>
@@ -460,7 +459,7 @@ export function AskPanel({
             ) : t.answer ? (
               <div className="space-y-2.5">
                 <div className="max-w-[95%] rounded-[20px] rounded-bl-md border border-line bg-card px-4 py-3">
-                  <p className="text-[1rem] leading-relaxed">
+                  <p className="text-base leading-relaxed">
                     {t.answer.display}
                   </p>
                   {t.answer.speech ? (

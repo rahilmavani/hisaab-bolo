@@ -63,16 +63,16 @@ test.describe("tester r4 · M5 recurring, demo clock, auto-reminder", () => {
     await expect(clockStatus(page)).toHaveText("Jobs ran; nothing new was due.", { timeout: 20_000 });
     const row = invoicesCard(page).getByRole("listitem").filter({ hasText: number });
     // Spec: overdue is "due + grace". The due is still within its grace period.
-    await expect.soft(row, "a due inside its grace period is labelled Overdue").not.toContainText("Overdue");
+    await expect.soft(row, "a due inside its grace period is labelled Overdue").not.toContainText("overdue");
     await shot(page, "r4-e2e-02-plus-1-day-in-grace");
 
     await page.getByRole("button", { name: "+7 days" }).click();
-    await expect(clockStatus(page)).toContainText(new RegExp(`reminder sent for .*${number}`), { timeout: 20_000 });
-    await expect(row).toContainText(/Overdue · 8 days/);
+    await expect(clockStatus(page)).toContainText(new RegExp(`reminder sent for .*${number}`, "i"), { timeout: 20_000 });
+    await expect(row).toContainText(/8 days overdue/);
     await shot(page, "r4-e2e-03-plus-7-days-reminded");
 
     await row.getByRole("link", { name: number }).click();
-    await expect(page.getByTestId("invoice-status")).toHaveText("Overdue · 8 days");
+    await expect(page.getByTestId("invoice-status")).toHaveText("8 days overdue");
     await expect(page.getByText("Overdue reminder emailed")).toHaveCount(1);
     await expect(page.getByText(/to usha\.das@example\.com/).first()).toBeVisible();
     // Another jump does not send a second auto-reminder for the same missed due.
@@ -136,10 +136,10 @@ test.describe("tester r4 · M5 recurring, demo clock, auto-reminder", () => {
     await dialog.getByRole("button", { name: "Mark recurring" }).click();
     await expect(recurringCard(page).getByRole("status")).toHaveText(/^Tracking weekly dues\./);
     await page.getByRole("button", { name: "+7 days" }).click();
-    await expect(clockStatus(page)).toContainText(/went overdue/, { timeout: 20_000 });
+    await expect(clockStatus(page)).toContainText(/went overdue/i, { timeout: 20_000 });
     await page.goto("/collections");
     const gopal = page.getByRole("row", { name: /Gopal Sinha/ }).first();
-    await expect(gopal).toContainText(/Overdue · 7 days/);
+    await expect(gopal).toContainText(/7 days overdue/);
     await expect(gopal).toContainText("Not emailed");
     await expect(gopal.getByRole("button", { name: "Send reminder" })).toBeDisabled();
     await shot(page, "r4-e2e-08-tracking-only-missed-due");

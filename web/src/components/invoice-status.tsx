@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import type { InvoiceStatus } from "@/lib/types";
 
-/** Overdue means past due + grace (the backend's rule); inside the grace period it is only "past due". */
+/** Overdue means past due + grace (the backend's rule); inside the grace period it is only "late". */
 /** markedPaid: the merchant confirmed money that came outside Paytm, so it wasn't matched automatically. */
 export function invoiceStatusLabel(
   status: InvoiceStatus,
@@ -11,7 +11,7 @@ export function invoiceStatusLabel(
 ): { text: string; tone: string } {
   if (status === "paid")
     return {
-      text: markedPaid ? "Paid · marked by you" : "Paid · auto-matched",
+      text: markedPaid ? "Marked paid" : "Paid",
       tone: "text-mint",
     };
   if (status === "cancelled") return { text: "Cancelled", tone: "text-faint" };
@@ -19,13 +19,13 @@ export function invoiceStatusLabel(
   const late = -dueInDays;
   if (late > graceDays || (status === "overdue" && late > 0)) {
     return {
-      text: `Overdue · ${late} day${late === 1 ? "" : "s"}`,
+      text: `${late} day${late === 1 ? "" : "s"} overdue`,
       tone: "text-amber",
     };
   }
   if (late > 0)
     return {
-      text: `Past due · ${late} day${late === 1 ? "" : "s"}, in grace`,
+      text: `${late} day${late === 1 ? "" : "s"} late, in grace period`,
       tone: "text-text",
     };
   if (dueInDays === 0) return { text: "Due today", tone: "text-text" };

@@ -41,7 +41,7 @@ export function RecurringCard({
     <section className="panel p-5 sm:p-6">
       <SectionTitle title="Recurring" />
       {s ? (
-        <div className="space-y-2 text-[0.95rem]">
+        <div className="space-y-2 text-base">
           <p className="flex items-center gap-2">
             <Repeat size={16} className="text-mint" aria-hidden />
             <span>

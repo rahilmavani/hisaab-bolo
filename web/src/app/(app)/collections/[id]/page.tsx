@@ -19,7 +19,7 @@ import { invoiceStatusLabel } from "@/components/invoice-status";
 import { MarkPaid } from "@/components/mark-paid";
 import { ErrorNote, Skeleton } from "@/components/ui";
 import { ApiError, api, useApi } from "@/lib/api";
-import { dateOnly, inr, istDate, istTime } from "@/lib/format";
+import { dateOnly, inr, istDate, istTime, relDate } from "@/lib/format";
 import type { InvoiceDetail } from "@/lib/types";
 
 function PaperInvoice({ inv }: { inv: InvoiceDetail }) {
@@ -35,7 +35,7 @@ function PaperInvoice({ inv }: { inv: InvoiceDetail }) {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm text-paper-muted">{inv.merchant_name}</p>
-          <h1 className="text-[1.6rem] leading-tight font-semibold tracking-tight">
+          <h1 className="text-2xl leading-tight font-semibold tracking-tight">
             Invoice {inv.number}
           </h1>
         </div>
@@ -52,7 +52,7 @@ function PaperInvoice({ inv }: { inv: InvoiceDetail }) {
         </div>
       </header>
 
-      <div className="mt-6 text-[0.95rem]">
+      <div className="mt-6 text-base">
         <p className="text-sm text-paper-muted">Bill to</p>
         <p className="font-semibold">{inv.payer_name}</p>
         {inv.email_to ? (
@@ -65,7 +65,7 @@ function PaperInvoice({ inv }: { inv: InvoiceDetail }) {
         ) : null}
       </div>
 
-      <table className="mt-6 w-full text-[0.95rem]">
+      <table className="mt-6 w-full text-base">
         <thead>
           <tr className="border-b border-paper-ink/15 text-left text-sm text-paper-muted">
             <th className="py-2 font-normal">Item</th>
@@ -78,7 +78,7 @@ function PaperInvoice({ inv }: { inv: InvoiceDetail }) {
             <tr key={i} className="border-b border-paper-ink/10">
               <td className="py-2.5">{it.name}</td>
               <td className="py-2.5 text-right">{it.qty}</td>
-              <td className="num py-2.5 text-right font-mono">
+              <td className="num py-2.5 text-right">
                 {inr(it.qty * it.unit_price_paise)}
               </td>
             </tr>
@@ -89,7 +89,7 @@ function PaperInvoice({ inv }: { inv: InvoiceDetail }) {
             <td className="pt-4 text-lg font-semibold" colSpan={2}>
               Total
             </td>
-            <td className="num pt-4 text-right font-mono text-lg font-semibold">
+            <td className="num pt-4 text-right text-lg font-semibold">
               {inr(inv.amount_paise)}
             </td>
           </tr>
@@ -252,18 +252,21 @@ export default function InvoicePage() {
               className={clsx("mt-0.5 text-2xl font-semibold", status.tone)}
               data-testid="invoice-status"
             >
-              {inv.status === "paid"
-                ? inv.payment?.source === "manual"
-                  ? "Paid · marked by you"
-                  : "Paid · auto-matched"
-                : status.text}
+              {inv.status === "paid" ? "Paid" : status.text}
             </p>
             {inv.payment ? (
-              <p className="mt-1 text-sm text-muted">
-                {inr(inv.payment.amount_paise)} via{" "}
-                {inv.payment.payment_mode ?? "Paytm"} on{" "}
-                {istDate(inv.payment.paid_at)}, {istTime(inv.payment.paid_at)}
-              </p>
+              <div className="mt-1 text-sm text-muted">
+                <p className="text-text">
+                  {inv.payment.source === "manual"
+                    ? "Marked paid by you"
+                    : "Matched to the Paytm payment"}
+                </p>
+                <p>
+                  {inr(inv.payment.amount_paise)} via{" "}
+                  {inv.payment.payment_mode ?? "Paytm"},{" "}
+                  {relDate(inv.payment.paid_at)} at {istTime(inv.payment.paid_at)}
+                </p>
+              </div>
             ) : null}
 
             {unsent ? (
@@ -413,7 +416,7 @@ export default function InvoicePage() {
               <li>
                 <span className="text-text">Created</span>{" "}
                 <span className="text-muted">
-                  {istDate(inv.created_at)}, {istTime(inv.created_at)}
+                  {relDate(inv.created_at, true)} {istTime(inv.created_at)}
                 </span>
               </li>
               {inv.reminders.map((r, i) =>
@@ -433,7 +436,7 @@ export default function InvoicePage() {
                         : "Invoice emailed"}
                     </span>{" "}
                     <span className="text-muted">
-                      {istDate(r.sent_at)}, {istTime(r.sent_at)}
+                      {relDate(r.sent_at, true)} {istTime(r.sent_at)}
                       {r.to_email ? ` to ${r.to_email}` : ""}
                     </span>
                   </li>
@@ -458,7 +461,7 @@ export default function InvoicePage() {
                       : "Paid and matched"}
                   </span>{" "}
                   <span className="text-muted">
-                    {istDate(inv.payment.paid_at)},{" "}
+                    {relDate(inv.payment.paid_at, true)}{" "}
                     {istTime(inv.payment.paid_at)}
                   </span>
                   {inv.payment.paytm_txn_id ? (

@@ -78,3 +78,33 @@ export function istISODate(iso: string): string {
     new Date(iso),
   );
 }
+
+// "Now" for relative dates follows the app clock (the demo clock can move it), not the browser:
+// the app shell reports the server's now and we keep the offset.
+let clockOffsetMs = 0;
+export function setAppNow(iso: string) {
+  clockOffsetMs = new Date(iso).getTime() - Date.now();
+}
+
+function daysFromToday(isoDate: string): number {
+  const today = istISODate(new Date(Date.now() + clockOffsetMs).toISOString());
+  return Math.round((Date.parse(`${isoDate}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
+}
+
+/** A calendar date (YYYY-MM-DD) as "today", "tomorrow", "yesterday" or "1 Nov". */
+export function relDay(isoDate: string, capitalize = false): string {
+  const d = daysFromToday(isoDate);
+  const word = d === 0 ? "today" : d === 1 ? "tomorrow" : d === -1 ? "yesterday" : null;
+  if (!word) return dateOnly(isoDate);
+  return capitalize ? word[0].toUpperCase() + word.slice(1) : word;
+}
+
+/** An instant as "today", "yesterday" or "31 Oct" (IST). */
+export function relDate(iso: string, capitalize = false): string {
+  return relDay(istISODate(iso), capitalize);
+}
+
+/** The API's habit line ("₹100 daily, ~8:30 AM · 121 payments since 1 Jul") as separate facts. */
+export function habitParts(habit: string): string[] {
+  return habit.split(" · ").filter(Boolean);
+}

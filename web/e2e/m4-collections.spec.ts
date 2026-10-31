@@ -21,8 +21,8 @@ test.describe("M4 collections, mock Paytm and webhooks", () => {
   test("collections lists pending payments from the seed", async ({ page }) => {
     const errors = watchErrors(page);
     await page.goto("/collections");
-    await expect(page.getByText("₹11,700 outstanding · 2 customers")).toBeVisible();
-    await expect(page.getByRole("row", { name: /Sharma Traders.*₹8,500.*Overdue · 9 days/ })).toBeVisible();
+    await expect(page.getByText("₹11,700 outstanding from 2 customers")).toBeVisible();
+    await expect(page.getByRole("row", { name: /Sharma Traders.*₹8,500.*9 days overdue/ })).toBeVisible();
     await expect(page.getByRole("row", { name: /Priya Caterers.*₹3,200.*Due tomorrow/ })).toBeVisible();
     await expect(page.getByRole("button", { name: "Send 1 overdue reminder" })).toBeVisible();
     await shot(page, "m4", "01-collections");
@@ -33,7 +33,7 @@ test.describe("M4 collections, mock Paytm and webhooks", () => {
     await page.goto("/collections");
     await page.getByRole("link", { name: "Sharma Traders", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Invoice INV-0412" })).toBeVisible();
-    await expect(page.getByTestId("invoice-status")).toHaveText("Overdue · 9 days");
+    await expect(page.getByTestId("invoice-status")).toHaveText("9 days overdue");
     await expect(page.getByRole("img", { name: /UPI QR code for ₹8,500/ })).toBeVisible();
     await page.getByRole("button", { name: "Send reminder" }).click();
     await expect(page.getByText(/Reminder emailed to accounts@sharmatraders.in/)).toBeVisible();
@@ -59,7 +59,7 @@ test.describe("M4 collections, mock Paytm and webhooks", () => {
     await shot(payer, "m4", "05-mock-gateway-paid");
 
     // No reload: Supabase Realtime flips the merchant's page.
-    await expect(page.getByTestId("invoice-status")).toHaveText("Paid · auto-matched", { timeout: 15_000 });
+    await expect(page.getByTestId("invoice-status")).toHaveText("Paid", { timeout: 15_000 });
     await expect(page.getByRole("img", { name: "Paid" })).toBeVisible();
     await expect(page.getByText(/paid$/).first()).toBeVisible();
     await shot(page, "m4", "06-invoice-paid-live");
@@ -69,7 +69,7 @@ test.describe("M4 collections, mock Paytm and webhooks", () => {
   test("dashboard pending payments update live when an invoice is paid", async ({ page, context }) => {
     await page.goto("/");
     const pending = page.locator("section", { hasText: "Pending payments" });
-    await expect(pending.getByText("₹11,700 outstanding · 2 customers")).toBeVisible();
+    await expect(pending.getByText("₹11,700 outstanding from 2 customers")).toBeVisible();
     const res = await page.request.get(`${process.env.API_BASE ?? "http://localhost:8000"}/health`);
     expect(res.ok()).toBeTruthy();
 
@@ -82,7 +82,7 @@ test.describe("M4 collections, mock Paytm and webhooks", () => {
     await payer.getByRole("button", { name: /^Pay ₹3,200/ }).click();
     await expect(payer.getByText("Payment successful")).toBeVisible();
 
-    await expect(pending.getByText("₹8,500 outstanding · 1 customer")).toBeVisible({ timeout: 15_000 });
+    await expect(pending.getByText("₹8,500 outstanding from 1 customer")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("status").filter({ hasText: "INV-0414 paid" })).toBeVisible();
     await shot(page, "m4", "07-dashboard-live-paid");
   });
@@ -98,7 +98,7 @@ test.describe("M4 collections, mock Paytm and webhooks", () => {
     await expect(page.getByTestId("invoice-status")).not.toHaveText(/Paid/);
     await page.getByRole("button", { name: "Check payment" }).click();
     await expect(page.getByText("Paytm confirms the payment. Marked paid.")).toBeVisible();
-    await expect(page.getByTestId("invoice-status")).toHaveText("Paid · auto-matched");
+    await expect(page.getByTestId("invoice-status")).toHaveText("Paid");
     await shot(page, "m4", "08-check-payment-recovered");
   });
 

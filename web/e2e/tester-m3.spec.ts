@@ -119,7 +119,7 @@ test.describe("Tester M3: dashboard reads the API faithfully", () => {
       (Date.parse(istDate(d.now)) - Date.parse(istDate(p.last_paid_at))) / 86_400_000,
     );
     const quiet = page.locator("section", { has: page.getByRole("heading", { name: "Gone quiet" }) });
-    await expect(quiet).toContainText(`${p.display_name} · last paid ${calendarDays} days ago`);
+    await expect(quiet).toContainText(`Last paid ${calendarDays} days ago`);
   });
 });
 
@@ -135,16 +135,16 @@ test.describe("Tester M3: search, profile and dialogs (demo, read-only)", () => 
   test("customer search finds Ram by phone typed the Indian way", async ({ page }) => {
     await page.goto("/customers");
     await searchFor(page, "+91 98765 43210");
-    await expect(page.getByRole("link", { name: /Ram · ram@paytm/ })).toBeVisible({ timeout: 2000 });
+    await expect(page.getByRole("link", { name: /Ram.*ram@paytm/ })).toBeVisible({ timeout: 2000 });
   });
 
   test("search shows the deck's Ram card for name, UPI ID and phone", async ({ page }) => {
     await page.goto("/");
     for (const q of ["ram", "raam", "ram@paytm", "9876543210"]) {
       await searchFor(page, q);
-      const row = page.getByRole("link", { name: /Ram · ram@paytm/ });
+      const row = page.getByRole("link", { name: /Ram.*ram@paytm/ });
       await expect(row).toBeVisible();
-      await expect(row).toContainText(/₹100 daily, ~8:\d\d AM · 121 payments since \d+ \w+/);
+      await expect(row).toContainText(/₹100 daily, ~8:\d\d AM.*121 payments since \d+ \w+/);
     }
   });
 
@@ -185,7 +185,7 @@ test.describe("Tester M3: search, profile and dialogs (demo, read-only)", () => 
   test("Show all payments toggles the full list", async ({ page }) => {
     await page.goto("/customers");
     await page.getByRole("searchbox").fill("ram@paytm");
-    await page.getByRole("link", { name: /Ram · ram@paytm/ }).click();
+    await page.getByRole("link", { name: /Ram.*ram@paytm/ }).click();
     const payments = page.locator("section", { has: page.getByRole("heading", { name: "Payments" }) });
     await expect(payments.locator("tbody tr")).toHaveCount(15);
     await payments.getByRole("button", { name: "Show all 121 payments" }).click();
@@ -213,7 +213,7 @@ test.describe("Tester M3: phone widths", () => {
       }
       await page.goto("/customers");
       await page.getByRole("searchbox").fill("ram@paytm");
-      await page.getByRole("link", { name: /Ram · ram@paytm/ }).click();
+      await page.getByRole("link", { name: /Ram.*ram@paytm/ }).click();
       await expect(page.getByRole("heading", { name: "Ram", exact: true })).toBeVisible();
       await page.waitForTimeout(800);
       const layout = await page.evaluate(() => window.innerWidth);
@@ -332,13 +332,13 @@ test.describe("Tester M3: edits on a throwaway merchant", () => {
     await dialog.getByLabel("Notes").fill("Prefers evening delivery");
     await dialog.getByRole("button", { name: "Save changes" }).click();
     await expect(dialog).toBeHidden();
-    await expect(page.getByText("GSTIN 27ABCDE1234F1Z5")).toBeVisible();
+    await expect(page.getByText("27ABCDE1234F1Z5", { exact: true })).toBeVisible();
     const ids = page.locator("section", { has: page.getByRole("heading", { name: "How we recognise them" }) });
     await expect(ids).toContainText("9123456780");
     await expect(ids).toContainText("asha.new@example.com");
     await expect(page.getByText("Prefers evening delivery")).toBeVisible();
     await page.reload();
-    await expect(page.getByText("GSTIN 27ABCDE1234F1Z5")).toBeVisible();
+    await expect(page.getByText("27ABCDE1234F1Z5", { exact: true })).toBeVisible();
     expect(errors).toEqual([]);
   });
 

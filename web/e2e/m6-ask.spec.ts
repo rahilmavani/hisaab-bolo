@@ -9,7 +9,7 @@ test.describe("M6 Ask Hisaab", () => {
     const errors = watchErrors(page);
     await page.goto("/");
     const panel = page.getByRole("complementary", { name: "Ask Hisaab" });
-    await expect(panel.getByText("Hindi · English · Hinglish")).toBeVisible();
+    await expect(panel.getByText("Hindi · English · Hinglish")).toHaveCount(0);
     await panel.getByLabel("Type a question").fill("Ram ne pichhle 4 mahine mein kitna diya?");
     await panel.getByRole("button", { name: "Send question" }).click();
     const answer = panel.locator("p", { hasText: "12,100" }).first();

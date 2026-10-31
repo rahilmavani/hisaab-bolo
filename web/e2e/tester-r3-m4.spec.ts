@@ -62,7 +62,7 @@ test.describe("tester r3 · M4 collections UI", () => {
     await dashboard.goto("/");
     const pending = dashboard.locator("section", { hasText: "Pending payments" });
     await expect(pending.getByRole("row", { name: /Hema Bhat.*₹1,234\.50/ })).toBeVisible();
-    const before = await pending.getByText(/outstanding ·/).textContent();
+    const before = await pending.getByText(/outstanding from/).textContent();
 
     const payer = await context.newPage();
     await payer.goto(inv.link);
@@ -73,9 +73,9 @@ test.describe("tester r3 · M4 collections UI", () => {
     await expect(payer.getByText(/^Txn \d{8}/)).toBeVisible();
 
     // No reloads from here on.
-    await expect(page.getByTestId("invoice-status")).toHaveText("Paid · auto-matched", { timeout: 15_000 });
+    await expect(page.getByTestId("invoice-status")).toHaveText("Paid", { timeout: 15_000 });
     await expect(page.getByRole("img", { name: "Paid" })).toBeVisible();
-    await expect(page.getByText(/₹1,234\.50 via UPI on/)).toBeVisible();
+    await expect(page.getByText(/₹1,234\.50 via UPI,/)).toBeVisible();
     await expect(page.getByText("Paid and matched")).toBeVisible();
     await expect(page.getByText(/^Txn \d{8}/)).toBeVisible();
     await expect(page.getByRole("button", { name: "Send reminder" })).toHaveCount(0);
@@ -87,7 +87,7 @@ test.describe("tester r3 · M4 collections UI", () => {
     ).toBeVisible();
     await shot(collections, "m4", "r3-03-collections-paid-live");
 
-    await expect(pending.getByText(/outstanding ·|Nothing outstanding/)).not.toHaveText(before ?? "", { timeout: 15_000 });
+    await expect(pending.getByText(/outstanding from|Nothing outstanding/)).not.toHaveText(before ?? "", { timeout: 15_000 });
     await expect(dashboard.getByRole("status").filter({ hasText: `${inv.number} paid` })).toBeVisible();
     await shot(dashboard, "m4", "r3-04-dashboard-after-pay");
     expect([...errors, ...cErrors, ...dErrors]).toEqual([]);
@@ -104,7 +104,7 @@ test.describe("tester r3 · M4 collections UI", () => {
     await expect(payer.getByText("Payment successful")).toBeVisible();
     await expect(page.getByRole("status").filter({ hasText: `${inv.number} paid` })).toBeVisible({ timeout: 15_000 });
     await shot(page, "m4", "r3-05-dashboard-pending-after-pay");
-    await expect(pending.getByRole("row", { name: /Rekha Malhotra.*₹640.*Paid · auto-matched/ })).toBeVisible();
+    await expect(pending.getByRole("row", { name: /Rekha Malhotra.*₹640.*Paid/ })).toBeVisible();
   });
 
   test("a failed attempt keeps the invoice open; a retry then flips it live", async ({ page, context }) => {
@@ -118,7 +118,7 @@ test.describe("tester r3 · M4 collections UI", () => {
     await expect(page.getByTestId("invoice-status")).toHaveText("Due in 7 days");
     await payer.getByRole("button", { name: "Pay ₹420" }).click();
     await expect(payer.getByText("Payment successful")).toBeVisible();
-    await expect(page.getByTestId("invoice-status")).toHaveText("Paid · auto-matched", { timeout: 15_000 });
+    await expect(page.getByTestId("invoice-status")).toHaveText("Paid", { timeout: 15_000 });
   });
 
   test("dropped webhook: Check payment on the Collections row finds and matches it", async ({ page, context }) => {
@@ -171,7 +171,7 @@ test.describe("tester r3 · M4 collections UI", () => {
 
   test("cancel takes an invoice out of Pending payments", async ({ page }) => {
     await page.goto("/collections");
-    const sub = page.getByText(/outstanding · \d+ customer/);
+    const sub = page.getByText(/outstanding from \d+ customer/);
     const before = await sub.textContent();
     const inv = await newInvoice(page, "Ritu Rao", "Old order", "700");
     await page.getByRole("button", { name: "Cancel invoice" }).click();

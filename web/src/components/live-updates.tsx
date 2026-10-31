@@ -69,8 +69,8 @@ export function LiveUpdates({ merchantId }: { merchantId: string }) {
       if (ended) {
         const outcome = callOutcomeText(r.call_outcome, r.call_promised_date);
         const parts = [outcome ?? callStatusLabel(r.call_status, r.call_duration_s).text];
-        if (r.call_link_sent_at) parts.push("payment link emailed during the call");
-        push({ id: key, icon: "call", title: `Call with ${who} ended`, body: parts.join(" · ") });
+        if (r.call_link_sent_at) parts.push("Payment link emailed during the call");
+        push({ id: key, icon: "call", title: `Call with ${who} ended`, body: `${parts.join(". ")}.` });
       } else {
         push({
           id: key,
@@ -170,7 +170,7 @@ export function LiveUpdates({ merchantId }: { merchantId: string }) {
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed top-4 left-1/2 z-50 flex -translate-x-1/2 flex-col gap-2 lg:left-[calc(50%+116px)] xl:left-[calc(50%-84px)]"
+      className="pointer-events-none fixed inset-x-4 bottom-20 z-50 flex flex-col gap-2 sm:inset-x-auto sm:right-6 sm:w-96 lg:bottom-24 xl:right-[424px] xl:bottom-6"
     >
       {toasts.map((t) => (
         <div

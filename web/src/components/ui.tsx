@@ -24,7 +24,7 @@ const BADGE_DOTS: Record<string, string> = {
 
 export function Badge({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md border border-line px-2 py-0.5 text-[13px] leading-5 text-muted">
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-line px-2 py-0.5 text-sm leading-5 text-muted">
       <span aria-hidden className={clsx("h-1.5 w-1.5 rounded-full", BADGE_DOTS[label] ?? "bg-faint")} />
       {label}
     </span>
@@ -49,7 +49,7 @@ export function StatTile({
   return (
     <div className="min-w-0">
       <p className="text-sm text-muted">{label}</p>
-      <p className="num mt-2 text-[32px] leading-9 font-medium text-text">
+      <p className="num mt-2 text-3xl leading-9 font-medium text-text">
         <span className={total ? "ledger-total" : undefined}>{value}</span>
       </p>
       {delta ? (

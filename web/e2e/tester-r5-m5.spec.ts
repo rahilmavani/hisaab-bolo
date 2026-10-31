@@ -62,7 +62,7 @@ test.describe("tester r5 · M5 recurring edits, clock jumps, reminders", () => {
     await shot(page, "r5-e2e-01-schedule-email-edited");
 
     await jump(page, "+7 days");
-    await expect(clockStatus(page)).toContainText(new RegExp(`reminder sent for .*${number}`));
+    await expect(clockStatus(page)).toContainText(new RegExp(`reminder sent for .*${number}`, "i"));
     await invoicesCard(page).getByRole("link", { name: number }).click();
     await expect(page.getByText("Overdue reminder emailed")).toHaveCount(1);
     await shot(page, "r5-e2e-02-reminder-recipient-after-edit");
@@ -115,7 +115,7 @@ test.describe("tester r5 · M5 recurring edits, clock jumps, reminders", () => {
     const number = ((await row.getByRole("link").textContent()) ?? "").trim();
 
     await jump(page, "+7 days");
-    await expect(row).toContainText(/Overdue · 7 days/);
+    await expect(row).toContainText(/7 days overdue/);
     await jump(page, "+7 days");
     await row.getByRole("link", { name: number }).click();
     await expect(page.getByText(/emailed/)).toHaveCount(0);

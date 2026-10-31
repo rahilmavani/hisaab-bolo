@@ -71,10 +71,10 @@ test.describe("tester r6 · M5 stop/re-mark, grace edits", () => {
 
     await jump(page, "+7 days");
     await page.reload();
-    await expect(invoicesCard(page).getByRole("listitem").filter({ hasText: number })).toContainText(/Overdue · 7 days/);
+    await expect(invoicesCard(page).getByRole("listitem").filter({ hasText: number })).toContainText(/7 days overdue/);
     await shot(page, "r6-e2e-02-re-marked-due-overdue");
     await invoicesCard(page).getByRole("link", { name: number }).click();
-    await expect(page.getByTestId("invoice-status")).toHaveText(/Overdue/);
+    await expect(page.getByTestId("invoice-status")).toHaveText(/overdue/);
     await expect(
       page.getByText("Overdue reminder emailed"),
       `${number} is missed and the card says reminders go to kavita.verma@example.com, but no reminder was sent`,
@@ -108,6 +108,6 @@ test.describe("tester r6 · M5 stop/re-mark, grace edits", () => {
       "the merchant gave 5 days grace, yet the due billed before the edit was reminded the next day",
     ).not.toContainText(number);
     await page.reload();
-    await expect(invoicesCard(page).getByRole("listitem").filter({ hasText: number })).not.toContainText("Overdue");
+    await expect(invoicesCard(page).getByRole("listitem").filter({ hasText: number })).not.toContainText("overdue");
   });
 });

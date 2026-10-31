@@ -4,7 +4,7 @@ import { CheckCircle2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/lib/api";
-import { dateOnly, inr, istDate, istTime } from "@/lib/format";
+import { dateOnly, habitParts, inr, istTime, relDate, relDay } from "@/lib/format";
 import type { AskComponent, PendingAction } from "@/lib/types";
 import { TrendChart } from "../charts";
 import { errorText } from "./errors";
@@ -52,13 +52,13 @@ function PayerCard({
       <div className="flex items-center gap-3">
         <Avatar name={data.name} size={38} />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">
-            {data.name}
+          <p className="flex min-w-0 items-baseline gap-2">
+            <span className="truncate font-semibold">{data.name}</span>
             {data.vpa ? (
-              <span className="font-normal text-muted"> · {data.vpa}</span>
+              <span className="truncate text-sm text-faint">{data.vpa}</span>
             ) : null}
           </p>
-          <p className="truncate text-sm text-muted">{data.habit}</p>
+          <p className="truncate text-sm text-muted">{habitParts(data.habit)[0]}</p>
         </div>
         {data.badges[0] ? <Badge label={data.badges[0]} /> : null}
       </div>
@@ -93,9 +93,11 @@ function DataTable({
   const rows = all ? data.rows : data.rows.slice(0, 6);
   return (
     <div className="rounded-2xl border border-line bg-card p-3">
-      <p className="mb-2 text-sm text-muted">
-        {data.title}
-        {data.total_paise != null ? ` · ${inr(data.total_paise)}` : ""}
+      <p className="mb-2 flex items-baseline justify-between gap-3 text-sm text-muted">
+        <span>{data.title}</span>
+        {data.total_paise != null ? (
+          <span className="num text-text">{inr(data.total_paise)}</span>
+        ) : null}
       </p>
       <ul className="divide-y divide-line text-sm">
         {rows.map((r, i) =>
@@ -109,11 +111,11 @@ function DataTable({
                   {(r.customer as string) ?? "Walk-in"}
                 </span>
                 <span className="block truncate text-xs text-faint">
-                  {istDate(r.paid_at as string)}, {istTime(r.paid_at as string)}
-                  {r.description ? ` · ${r.description}` : ""}
+                  {r.description ? `${r.description}, ` : ""}
+                  {relDate(r.paid_at as string)} {istTime(r.paid_at as string)}
                 </span>
               </span>
-              <span className="num shrink-0 font-mono">
+              <span className="num shrink-0">
                 {inr(r.amount_paise as number)}
               </span>
             </li>
@@ -126,19 +128,20 @@ function DataTable({
                 <span className="min-w-0">
                   <span className="block truncate">{r.customer as string}</span>
                   <span className="block text-xs text-faint">
-                    {r.number as string} ·{" "}
+                    {r.number as string}
+                    {", "}
                     {r.status === "overdue" ? (
                       <span className="text-amber">
-                        overdue {r.days_overdue as number}d
+                        {r.days_overdue as number} days overdue
                       </span>
                     ) : r.status === "paid" ? (
                       <span className="text-mint">paid</span>
                     ) : (
-                      `due ${dateOnly(r.due_date as string)}`
+                      `due ${relDay(r.due_date as string)}`
                     )}
                   </span>
                 </span>
-                <span className="num shrink-0 font-mono">
+                <span className="num shrink-0">
                   {inr(r.amount_paise as number)}
                 </span>
               </Link>
@@ -165,8 +168,9 @@ function InvoiceCard({ data }: { data: Record<string, unknown> }) {
     return (
       <div className="rounded-2xl bg-paper p-3 text-paper-ink">
         <p className="text-xs text-paper-muted">Invoice preview</p>
-        <p className="font-semibold">
-          {String(data.customer)} · {String(data.amount)}
+        <p className="flex justify-between gap-3 font-semibold">
+          <span>{String(data.customer)}</span>
+          <span className="num">{String(data.amount)}</span>
         </p>
         {data.due_date ? (
           <p className="text-sm text-paper-muted">
@@ -183,11 +187,12 @@ function InvoiceCard({ data }: { data: Record<string, unknown> }) {
       className="block rounded-2xl bg-paper p-3 text-paper-ink"
     >
       <p className="text-xs text-paper-muted">{inv.number}</p>
-      <p className="font-semibold">
-        {inv.customer} · {inr(Math.round(Number(inv.amount_rupees) * 100))}
+      <p className="flex justify-between gap-3 font-semibold">
+        <span>{inv.customer}</span>
+        <span className="num">{inr(Math.round(Number(inv.amount_rupees) * 100))}</span>
       </p>
-      <p className="text-sm text-paper-muted">
-        {inv.status} · due {dateOnly(String(inv.due_date))}
+      <p className="text-sm text-paper-muted capitalize">
+        {inv.status}, due {relDay(String(inv.due_date))}
       </p>
     </Link>
   );

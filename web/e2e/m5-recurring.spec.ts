@@ -15,7 +15,7 @@ test.describe("M5 recurring payers, demo clock and auto-reminders", () => {
     const errors = watchErrors(page);
     await page.goto("/customers");
     await page.getByRole("searchbox").fill("ram");
-    await page.getByRole("link", { name: /Ram · ram@paytm/ }).click();
+    await page.getByRole("link", { name: /Ram.*ram@paytm/ }).click();
     await page.getByRole("button", { name: "Mark recurring" }).click();
     const dialog = page.getByRole("dialog", { name: "Mark Ram as recurring" });
     await expect(dialog.getByRole("radio", { name: /Monthly/ })).toHaveAttribute("aria-checked", "true");
@@ -31,12 +31,12 @@ test.describe("M5 recurring payers, demo clock and auto-reminders", () => {
 
     // Demo time jump: due today + 3 grace days → overdue on day 4 → reminder.
     await page.getByRole("button", { name: "+7 days" }).click();
-    await expect(page.getByRole("status").filter({ hasText: /reminder sent for INV-\d{4}/ })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("status").filter({ hasText: /reminder sent for INV-\d{4}/i })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("demo-clock-now").first()).not.toHaveText("");
     await shot(page, "m5", "03-clock-jump-reminder");
 
     await page.goto("/collections");
-    const row = page.getByRole("row", { name: /Ram .*₹3,000.*Overdue · \d+ days/ });
+    const row = page.getByRole("row", { name: /Ram .*₹3,000.*\d+ days overdue/ });
     await expect(row).toBeVisible();
     await row.getByRole("link", { name: "Ram" }).click();
     await expect(page.getByText("Overdue reminder emailed")).toBeVisible();

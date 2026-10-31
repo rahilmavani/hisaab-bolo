@@ -66,7 +66,7 @@ test.describe("tester r6 · M4 toasts at 1400 px, dropped webhook + cancel, phon
       expect(box.x, "toast starts left of the sidebar edge").toBeGreaterThanOrEqual(232);
       expect(box.x + box.width, "toast runs under the docked Ask panel").toBeLessThanOrEqual(ask.x);
     }
-    await expect(page.getByTestId("invoice-status")).toHaveText("Paid · auto-matched");
+    await expect(page.getByTestId("invoice-status")).toHaveText("Paid");
     await shot(page, "r6-e2e-01-invoice-paid-toast-1400");
     await shot(dashboard, "r6-e2e-02-dashboard-paid-toast-1400");
     expect(errors).toEqual([]);
@@ -99,7 +99,7 @@ test.describe("tester r6 · M4 toasts at 1400 px, dropped webhook + cancel, phon
     await expect(
       page.getByTestId("invoice-status"),
       `Paytm took ₹950 for ${inv.number}; neither Check payment nor the 5-minute check records it once cancelled`,
-    ).toHaveText("Paid · auto-matched");
+    ).toHaveText("Paid");
   });
 
   test.describe("phone width", () => {
@@ -115,7 +115,7 @@ test.describe("tester r6 · M4 toasts at 1400 px, dropped webhook + cancel, phon
       }
       await page.goto("/collections");
       await page.getByRole("link", { name: "Sharma Traders" }).first().click();
-      await expect(page.getByTestId("invoice-status")).toHaveText(/Overdue · 9 days/);
+      await expect(page.getByTestId("invoice-status")).toHaveText(/9 days overdue/);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(overflow).toBeLessThanOrEqual(0);
       await shot(page, "r6-e2e-05-invoice-phone");

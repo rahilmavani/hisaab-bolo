@@ -250,7 +250,7 @@ export function NewInvoiceDialog({
         ) : null}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
           <p className="text-lg">
-            Total <span className="num ml-1 font-mono font-semibold">{inr(total)}</span>
+            Total <span className="num ml-1 font-semibold">{inr(total)}</span>
           </p>
           <div className="flex gap-2">
             <button type="button" className="btn btn-quiet" onClick={onClose}>

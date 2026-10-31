@@ -100,10 +100,10 @@ test.describe("UPI payments to the shop's own UPI ID", () => {
       page.getByText(`Mark ${inv.number} paid (₹2,450)?`),
     ).toBeVisible();
     await page.getByRole("button", { name: "Yes, it's paid" }).click();
-    await expect(page.getByTestId("invoice-status")).toHaveText(
-      "Paid · marked by you",
-      { timeout: 15_000 },
-    );
+    await expect(page.getByTestId("invoice-status")).toHaveText("Paid", {
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Marked paid by you").first()).toBeVisible();
     await shot(page, "m9", "01-invoice-marked-paid");
 
     // The pay page no longer offers to pay.

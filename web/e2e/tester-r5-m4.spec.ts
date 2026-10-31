@@ -68,9 +68,9 @@ test.describe("tester r5 · M4 invoice → paid, toasts, link-only, clock reset"
     await payer.getByRole("button", { name: "Pay ₹4,250" }).click();
     await expect(payer.getByText("Payment successful")).toBeVisible();
 
-    await expect(page.getByTestId("invoice-status")).toHaveText("Paid · auto-matched", { timeout: 15_000 });
+    await expect(page.getByTestId("invoice-status")).toHaveText("Paid", { timeout: 15_000 });
     await expect(page.getByRole("img", { name: "Paid" })).toBeVisible();
-    await expect(pending.getByRole("row", { name: new RegExp(`${inv.number}.*Paid · auto-matched`) })).toBeVisible({ timeout: 15_000 });
+    await expect(pending.getByRole("row", { name: new RegExp(`${inv.number}.*Paid`) })).toBeVisible({ timeout: 15_000 });
     await expect(dashboard.getByRole("status").filter({ hasText: `${inv.number} paid` })).toBeVisible();
     await shot(page, "r5-e2e-01-invoice-paid-live");
     await shot(dashboard, "r5-e2e-02-dashboard-paid-live");
@@ -116,7 +116,7 @@ test.describe("tester r5 · M4 invoice → paid, toasts, link-only, clock reset"
     await expect(page.getByText(/Invoice emailed/)).toHaveCount(0);
     await page.getByRole("button", { name: "+7 days" }).first().click();
     await expect(clockStatus(page)).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByTestId("invoice-status")).toHaveText(/Overdue · 7 days/, { timeout: 15_000 });
+    await expect(page.getByTestId("invoice-status")).toHaveText(/7 days overdue/, { timeout: 15_000 });
     await shot(page, "r5-e2e-04-link-only-invoice-after-7-days");
     await expect(page.getByText(/Overdue reminder emailed/), `${inv.number}: the merchant chose "just get a link", yet a reminder was emailed`).toHaveCount(0);
   });
@@ -126,12 +126,12 @@ test.describe("tester r5 · M4 invoice → paid, toasts, link-only, clock reset"
     const pending = page.locator("section", { hasText: "Pending payments" });
     await expect(pending.getByRole("row", { name: /Priya Caterers.*Due tomorrow/ })).toBeVisible();
     await page.getByRole("button", { name: "+7 days" }).first().click();
-    await expect(clockStatus(page)).toContainText(/reminder sent for .*INV-0414/, { timeout: 20_000 });
+    await expect(clockStatus(page)).toContainText(/reminder sent for .*INV-0414/i, { timeout: 20_000 });
     await page.getByRole("button", { name: "Reset demo clock" }).first().click();
     await expect(page.getByRole("button", { name: "Reset demo clock" })).toHaveCount(0, { timeout: 20_000 });
     await expect(pending.getByRole("row", { name: /Priya Caterers/ })).toBeVisible();
     await shot(page, "r5-e2e-05-dashboard-after-reset");
     const priya = (await pending.getByRole("row", { name: /Priya Caterers/ }).textContent()) ?? "";
-    expect(priya, "INV-0414 is due tomorrow again after Reset").not.toMatch(/Overdue · -\d/);
+    expect(priya, "INV-0414 is due tomorrow again after Reset").not.toMatch(/-\d+ days? overdue/);
   });
 });

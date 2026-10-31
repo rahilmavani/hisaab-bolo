@@ -41,7 +41,7 @@ function LoginForm() {
   return (
     <form onSubmit={submit} className="panel w-full max-w-sm space-y-5 p-7 sm:p-8">
       <div>
-        <h1 className="text-[1.7rem] leading-tight font-semibold tracking-tight">Sign in to your hisaab</h1>
+        <h1 className="text-3xl leading-tight font-semibold tracking-tight">Sign in to your hisaab</h1>
         <p className="mt-1 text-muted">Your Paytm payments, sorted by day and by person.</p>
       </div>
       <label className="block space-y-1.5">
@@ -84,7 +84,7 @@ export default function LoginPage() {
   return (
     <main className="grid min-h-dvh place-items-center px-4 py-10">
       <div className="flex w-full flex-col items-center gap-10">
-        <p className="text-center text-[40px] leading-none font-medium tracking-[-0.02em] text-text sm:text-[48px]">
+        <p className="text-center text-4xl leading-none font-medium tracking-[-0.02em] text-text">
           Hisaab Bolo
         </p>
         <Suspense>

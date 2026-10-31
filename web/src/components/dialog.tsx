@@ -40,7 +40,7 @@ export function Dialog({
       {open ? (
         <div className="p-6">
           <div className="mb-5 flex items-start justify-between gap-3">
-            <h2 id="dialog-title" className="text-xl font-semibold">
+            <h2 id="dialog-title" className="text-lg font-semibold">
               {title}
             </h2>
             <button onClick={onClose} aria-label="Close" className="rounded-full p-1 text-muted hover:text-text">

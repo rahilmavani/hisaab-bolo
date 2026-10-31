@@ -11,13 +11,13 @@ test("dashboard and a customer profile fit a phone screen without sideways scrol
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Today’s hisaab" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Main" }).last()).toBeVisible();
-  await expect(page.getByText(/last paid 12 days ago/)).toBeVisible();
+  await expect(page.getByText(/Last paid 12 days ago/)).toBeVisible();
   expect(await overflow(page)).toBeLessThanOrEqual(0);
   await shot(page, "m3", "08-mobile-dashboard");
 
   await page.goto("/customers");
   await page.getByRole("searchbox").fill("ram");
-  await page.getByRole("link", { name: /Ram · ram@paytm/ }).click();
+  await page.getByRole("link", { name: /Ram.*ram@paytm/ }).click();
   await expect(page.getByRole("heading", { name: "Ram", exact: true })).toBeVisible();
   expect(await overflow(page)).toBeLessThanOrEqual(0);
   await shot(page, "m3", "09-mobile-profile");

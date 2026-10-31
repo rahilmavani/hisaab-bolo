@@ -76,7 +76,7 @@ test.describe("tester r7 · M4 moment 2 and cancelled-invoice link copy", () => 
     await dashboard.goto("/");
     const pending = dashboard.locator("section", { has: dashboard.getByRole("heading", { name: "Pending payments" }) });
     await expect(pending).toContainText(inv.number);
-    await expect(pending).toContainText("₹12,950 outstanding · 3 customers");
+    await expect(pending).toContainText("₹12,950 outstanding from 3 customers");
     const toasts = await Promise.all([page, collections, dashboard].map(countToasts));
 
     const payer = await context.newPage();
@@ -84,10 +84,10 @@ test.describe("tester r7 · M4 moment 2 and cancelled-invoice link copy", () => 
     await payer.getByRole("button", { name: "Pay ₹1,250" }).click();
     await expect(payer.getByText("Payment successful")).toBeVisible();
 
-    await expect(page.getByTestId("invoice-status")).toHaveText("Paid · auto-matched", { timeout: 15_000 });
+    await expect(page.getByTestId("invoice-status")).toHaveText("Paid", { timeout: 15_000 });
     await expect(page.getByRole("img", { name: "Paid" })).toBeVisible();
-    await expect(pending.getByRole("row").filter({ hasText: inv.number })).toContainText("Paid · auto-matched", { timeout: 15_000 });
-    await expect(pending).toContainText("₹11,700 outstanding · 2 customers");
+    await expect(pending.getByRole("row").filter({ hasText: inv.number })).toContainText("Paid", { timeout: 15_000 });
+    await expect(pending).toContainText("₹11,700 outstanding from 2 customers");
     const paidList = collections.locator("section", { hasText: "Matched automatically to the Paytm payment" });
     await expect(paidList).toContainText(inv.number, { timeout: 15_000 });
     await page.waitForTimeout(3_000); // late Realtime events must not add a second toast

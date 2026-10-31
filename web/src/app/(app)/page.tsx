@@ -21,7 +21,7 @@ import {
   StatTile,
 } from "@/components/ui";
 import { useApi } from "@/lib/api";
-import { dateOnly, hourLabel, inr, istDate, istTime, pct } from "@/lib/format";
+import { dateOnly, habitParts, hourLabel, inr, istDate, istTime, pct } from "@/lib/format";
 import type { DashboardSummary, TrendPoint } from "@/lib/types";
 
 const RANGES: {
@@ -92,11 +92,11 @@ function TrendBlock({
     <div>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-[15px] font-medium text-text">
+          <h2 className="text-base font-medium text-text">
             Collections, last {range.label}
             {range.grain === "week" ? " by week" : ""}
           </h2>
-          <p className="mt-1 flex flex-wrap gap-x-4 font-mono text-xs text-faint">
+          <p className="mt-1 flex flex-wrap gap-x-4 text-xs text-faint">
             <span className="flex items-center gap-2">
               <span aria-hidden className="h-0.5 w-4 rounded-full bg-blue" />
               {range.now}
@@ -124,7 +124,7 @@ function TrendBlock({
               onClick={() => setRange(r)}
               aria-pressed={r.key === range.key}
               className={clsx(
-                "h-7 rounded-md px-2.5 font-mono text-xs transition-colors",
+                "num h-7 rounded-md px-2.5 text-xs transition-colors",
                 r.key === range.key
                   ? "bg-card text-text shadow-[inset_0_0_0_1px_var(--color-line)]"
                   : "text-muted hover:text-text",
@@ -162,7 +162,7 @@ function SlowDayBanner({
         className="mt-[3px] shrink-0 text-amber"
         aria-hidden
       />
-      <p className="text-[15px] text-text">
+      <p className="text-base text-text">
         Slow day: takings are {slow.drop_pct}% below a usual {slow.weekday} so
         far.{" "}
         <span className="text-muted">
@@ -198,7 +198,7 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <header>
-        <h1 className="text-[28px] leading-9 font-medium tracking-[-0.01em] sm:text-[30px]">
+        <h1 className="text-3xl leading-9 font-medium tracking-[-0.01em]">
           Today’s hisaab
         </h1>
         <p className="mt-1 text-sm text-muted">
@@ -259,10 +259,10 @@ export default function DashboardPage() {
             sub={
               data.outstanding.invoices.length ? (
                 <>
-                  <span className="ledger-total num font-mono text-text">
+                  <span className="ledger-total num text-text">
                     {inr(data.outstanding.total_paise)}
                   </span>{" "}
-                  outstanding · {data.outstanding.customers} customer
+                  outstanding from {data.outstanding.customers} customer
                   {data.outstanding.customers === 1 ? "" : "s"}
                 </>
               ) : (
@@ -275,8 +275,8 @@ export default function DashboardPage() {
           </h2>
           {data.outstanding.invoices.length ||
           data.outstanding.recently_paid.length ? (
-            <table className="w-full text-left text-[15px]">
-              <thead className="text-[13px] text-faint">
+            <table className="w-full text-left text-base">
+              <thead className="text-sm text-faint">
                 <tr className="border-b border-line">
                   <th className="h-9 font-normal">Customer</th>
                   <th className="h-9 text-right font-normal">Amount</th>
@@ -296,11 +296,11 @@ export default function DashboardPage() {
                       >
                         {inv.payer_name}
                       </Link>
-                      <span className="block font-mono text-xs text-faint">
+                      <span className="block text-xs text-faint">
                         {inv.number}
                       </span>
                     </td>
-                    <td className="num py-3 text-right font-mono">
+                    <td className="num py-3 text-right">
                       {inr(inv.amount_paise)}
                     </td>
                     <td className="py-3 pl-6">
@@ -316,7 +316,7 @@ export default function DashboardPage() {
                   <tr>
                     <td
                       colSpan={3}
-                      className="pt-5 pb-1 text-[13px] text-faint"
+                      className="pt-5 pb-1 text-sm text-faint"
                     >
                       Paid recently
                     </td>
@@ -331,11 +331,11 @@ export default function DashboardPage() {
                       >
                         {inv.payer_name}
                       </Link>
-                      <span className="block font-mono text-xs text-faint">
+                      <span className="block text-xs text-faint">
                         {inv.number}
                       </span>
                     </td>
-                    <td className="num py-3 text-right font-mono text-muted">
+                    <td className="num py-3 text-right text-muted">
                       {inr(inv.amount_paise)}
                     </td>
                     <td className="py-3 pl-6">
@@ -350,10 +350,12 @@ export default function DashboardPage() {
               </tbody>
             </table>
           ) : (
-            <p className="text-muted">
-              Every invoice is paid. New invoices you send will show up here
-              until they’re paid.
-            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-muted">No unpaid invoices.</p>
+              <Link href="/collections" className="btn btn-quiet px-3 py-1.5 text-sm">
+                New invoice
+              </Link>
+            </div>
           )}
         </section>
 
@@ -374,15 +376,14 @@ export default function DashboardPage() {
                   >
                     <Avatar name={p.display_name} size={36} />
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium">
-                        {p.display_name}{" "}
-                        <span className="font-normal text-amber">
-                          · last paid {Math.floor(p.days_since_last ?? 0)} days
-                          ago
+                      <p className="flex flex-wrap items-baseline justify-between gap-x-3">
+                        <span className="font-medium">{p.display_name}</span>
+                        <span className="text-sm text-amber">
+                          Last paid {Math.floor(p.days_since_last ?? 0)} days ago
                         </span>
                       </p>
                       <p className="truncate text-sm text-muted">
-                        Usually {p.habit}
+                        Usually {habitParts(p.habit)[0]}
                       </p>
                     </div>
                   </Link>
@@ -390,9 +391,7 @@ export default function DashboardPage() {
               ))}
             </ul>
           ) : (
-            <p className="text-muted">
-              All your regulars have paid on their usual rhythm.
-            </p>
+            <p className="text-muted">No regulars have gone quiet.</p>
           )}
         </section>
 
@@ -421,7 +420,7 @@ export default function DashboardPage() {
                   className="flex items-center justify-between gap-3 py-3"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-[15px]">
+                    <p className="truncate text-base">
                       {t.payer_id ? (
                         <Link
                           href={`/customers/${t.payer_id}`}
@@ -438,10 +437,10 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="num font-mono text-[15px]">
+                    <p className="num text-base">
                       {inr(t.amount_paise)}
                     </p>
-                    <p className="font-mono text-xs text-faint">
+                    <p className="num text-xs text-faint">
                       {istTime(t.paid_at)}
                     </p>
                   </div>

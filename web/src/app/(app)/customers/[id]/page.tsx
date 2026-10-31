@@ -3,7 +3,7 @@
 import { ArrowLeft, FilePlus2, Merge, PencilLine } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useMe } from "@/components/app-shell";
 import { MonthlyBars } from "@/components/charts";
 import { InvoiceStatusText } from "@/components/invoice-status";
@@ -13,7 +13,7 @@ import { PaymentsTable } from "@/components/payments-table";
 import { RecurringCard } from "@/components/recurring-card";
 import { Avatar, Badge, ErrorNote, SectionTitle, Skeleton, StatTile } from "@/components/ui";
 import { ApiError, useApi } from "@/lib/api";
-import { dateOnly, inr, istDate, istISODate } from "@/lib/format";
+import { habitParts, inr, istISODate, relDate, relDay } from "@/lib/format";
 import type { PayerProfile, Txn } from "@/lib/types";
 
 const KIND_LABEL = { vpa: "UPI ID", phone: "Phone", email: "Email", paytm_cust_id: "Paytm customer ID" } as const;
@@ -65,18 +65,39 @@ export default function PayerPage() {
           <Avatar name={p.display_name} size={64} />
           <div className="min-w-[15rem] flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 id="payer-name" className="text-[1.8rem] leading-tight font-semibold tracking-tight">
+              <h1 id="payer-name" className="text-3xl leading-tight font-semibold tracking-tight">
                 {p.display_name}
               </h1>
               {p.badges.map((b) => (
                 <Badge key={b} label={b} />
               ))}
             </div>
-            <p className="mt-1 text-[15px] text-muted">{p.habit}</p>
-            <p className="mt-1 flex flex-wrap gap-x-1.5 text-sm break-all text-muted">
-              <span>{[p.vpa, p.phone, p.email].filter(Boolean).join(" · ") || "No contact details yet"}</span>
-              {p.gstin ? <span className="font-mono whitespace-nowrap">· GSTIN {p.gstin}</span> : null}
-            </p>
+            <div className="mt-1 text-base text-muted">
+              {habitParts(p.habit).map((part) => (
+                <p key={part}>{part}</p>
+              ))}
+            </div>
+            {[p.vpa, p.phone, p.email, p.gstin].some(Boolean) ? (
+              <dl className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
+                {(
+                  [
+                    ["UPI", p.vpa],
+                    ["Phone", p.phone],
+                    ["Email", p.email],
+                    ["GSTIN", p.gstin],
+                  ] as const
+                )
+                  .filter(([, v]) => v)
+                  .map(([label, value]) => (
+                    <Fragment key={label}>
+                      <dt className="text-faint">{label}</dt>
+                      <dd className={label === "GSTIN" ? "font-mono break-all" : "break-all"}>{value}</dd>
+                    </Fragment>
+                  ))}
+              </dl>
+            ) : (
+              <p className="mt-2 text-sm text-muted">No contact details yet.</p>
+            )}
           </div>
           {/* Beside the name when there's room; on its own line (buttons wrapping) when there isn't. */}
           <div className="flex max-w-full min-w-0 flex-wrap gap-2">
@@ -93,7 +114,7 @@ export default function PayerPage() {
         </div>
 
         {p.lost ? (
-          <p role="status" className="mt-5 rounded-2xl border border-amber/25 bg-amber/[0.07] px-4 py-3 text-[0.97rem]">
+          <p role="status" className="mt-5 rounded-2xl border border-amber/25 bg-amber/[0.07] px-4 py-3 text-base">
             <span className="text-amber">Gone quiet.</span> Last paid {lastPaidDays} days ago; they usually pay every{" "}
             {Math.round(p.median_gap_days ?? 0)} day{Math.round(p.median_gap_days ?? 0) === 1 ? "" : "s"}.
           </p>
@@ -105,7 +126,7 @@ export default function PayerPage() {
           <StatTile label="Usual amount" value={p.median_amount_paise ? inr(p.median_amount_paise) : "—"} />
           <StatTile
             label="Last paid"
-            value={p.last_paid_at ? istDate(p.last_paid_at) : "—"}
+            value={p.last_paid_at ? relDate(p.last_paid_at, true) : "—"}
             sub={p.typical_time ? `Usually around ${p.typical_time}` : undefined}
           />
         </div>
@@ -133,7 +154,7 @@ export default function PayerPage() {
 
           <section className="panel p-5 sm:p-6">
             <SectionTitle title="How we recognise them" sub="Payments from any of these land in this ledger" />
-            <ul className="space-y-2 text-[0.95rem]">
+            <ul className="space-y-2 text-base">
               {p.identifiers.map((i) => (
                 <li key={`${i.kind}-${i.value}`} className="flex justify-between gap-3">
                   <span className="text-muted">{KIND_LABEL[i.kind]}</span>
@@ -149,15 +170,15 @@ export default function PayerPage() {
             {p.invoices.length ? (
               <ul className="divide-y divide-line">
                 {p.invoices.map((inv) => (
-                  <li key={inv.id} className="flex items-center justify-between gap-3 py-2.5 text-[0.95rem]">
+                  <li key={inv.id} className="flex items-center justify-between gap-3 py-2.5 text-base">
                     <span>
-                      <Link href={`/collections/${inv.id}`} className="font-mono text-sm hover:text-blue">
+                      <Link href={`/collections/${inv.id}`} className="text-sm hover:text-blue">
                         {inv.number}
                       </Link>
-                      <span className="block text-sm text-muted">Due {dateOnly(inv.due_date)}</span>
+                      <span className="block text-sm text-muted">Due {relDay(inv.due_date)}</span>
                     </span>
                     <span className="text-right">
-                      <span className="num block font-mono">{inr(inv.amount_paise)}</span>
+                      <span className="num block">{inr(inv.amount_paise)}</span>
                       <InvoiceStatusText
                         className="text-sm"
                         status={inv.status}
@@ -169,7 +190,12 @@ export default function PayerPage() {
                 ))}
               </ul>
             ) : (
-              <p className="text-muted">No invoices for this customer.</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-muted">No invoices yet.</p>
+                <button className="btn btn-quiet px-3 py-1.5 text-sm" onClick={() => setInvoiceOpen(true)} disabled={!me}>
+                  New invoice
+                </button>
+              </div>
             )}
           </section>
 

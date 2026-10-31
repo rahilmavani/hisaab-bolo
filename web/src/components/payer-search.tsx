@@ -4,6 +4,7 @@ import { Search, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useApi } from "@/lib/api";
+import { habitParts } from "@/lib/format";
 import type { Payer } from "@/lib/types";
 import { Avatar, Badge, Skeleton } from "./ui";
 
@@ -24,11 +25,17 @@ export function PayerRow({ payer }: { payer: Payer }) {
     >
       <Avatar name={payer.display_name} size={40} />
       <div className="min-w-0 flex-1">
-        <p className="flex min-w-0 items-baseline gap-1.5 text-[15px] font-medium text-text">
+        <p className="flex min-w-0 items-baseline gap-2.5 text-base font-medium text-text">
           <span className="max-w-[65%] shrink-0 truncate">{payer.display_name}</span>
-          {payer.vpa ? <span className="min-w-0 truncate font-normal text-muted">· {payer.vpa}</span> : null}
+          {payer.vpa ? <span className="min-w-0 truncate text-sm font-normal text-faint">{payer.vpa}</span> : null}
         </p>
-        <p className="truncate text-sm text-muted">{payer.habit}</p>
+        <p className="flex min-w-0 flex-wrap gap-x-3 text-sm text-muted">
+          {habitParts(payer.habit).map((part, i) => (
+            <span key={part} className={i > 0 ? "text-faint" : "truncate"}>
+              {part}
+            </span>
+          ))}
+        </p>
       </div>
       <div className="flex shrink-0 gap-2">
         {payer.badges.map((b, i) => (
@@ -61,7 +68,7 @@ export function PayerSearchBox({
         data-autofocus={autoFocus || undefined}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search by name, UPI ID or phone"
-        className="min-w-0 flex-1 bg-transparent text-[15px] text-text outline-none placeholder:text-faint focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
+        className="min-w-0 flex-1 bg-transparent text-base text-text outline-none placeholder:text-faint focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
       />
       {value ? (
         <button type="button" onClick={() => onChange("")} aria-label="Clear search" className="text-muted hover:text-text">

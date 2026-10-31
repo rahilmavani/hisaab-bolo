@@ -118,7 +118,7 @@ function MockPay() {
               <p className="text-sm text-paper-muted">
                 Paying {order.merchant_name ?? "merchant"}
               </p>
-              <h1 className="mt-1 text-[2.4rem] leading-none font-semibold tracking-tight">
+              <h1 className="mt-1 text-4xl leading-none font-semibold tracking-tight">
                 {inr(order.amount_paise)}
               </h1>
               <p className="mt-2 text-paper-muted">
@@ -126,18 +126,18 @@ function MockPay() {
                   ? `Invoice ${order.invoice_number}`
                   : "Payment"}
                 {order.payer_name ? ` for ${order.payer_name}` : ""}
-                {order.due_date ? ` · due ${dateOnly(order.due_date)}` : ""}
+                {order.due_date ? `, due ${dateOnly(order.due_date)}` : ""}
               </p>
 
               {order.line_items.length ? (
-                <ul className="mt-5 divide-y divide-paper-ink/10 border-y border-paper-ink/10 text-[0.95rem]">
+                <ul className="mt-5 divide-y divide-paper-ink/10 border-y border-paper-ink/10 text-base">
                   {order.line_items.map((it, i) => (
                     <li key={i} className="flex justify-between gap-3 py-2">
                       <span>
                         {it.name}
                         {it.qty !== 1 ? ` × ${it.qty}` : ""}
                       </span>
-                      <span className="font-mono">
+                      <span className="num">
                         {inr(it.qty * it.unit_price_paise)}
                       </span>
                     </li>
@@ -197,7 +197,7 @@ function MockPay() {
                       </a>
                       <p className="text-center text-sm text-paper-muted">
                         Opens Paytm, PhonePe, Google Pay or any UPI app on this
-                        phone. Pays {order.upi.payee_name} · {order.upi.upi_id}
+                        phone. Pays {order.upi.payee_name} ({order.upi.upi_id}).
                       </p>
                       <figure className="flex flex-col items-center gap-2 pt-2">
                         {/* eslint-disable-next-line @next/next/no-img-element -- a data: URI, nothing to optimise */}

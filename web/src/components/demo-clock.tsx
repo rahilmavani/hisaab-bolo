@@ -39,7 +39,9 @@ function summarise(jobs: Jobs | undefined): string {
     parts.push(`reminder sent for ${od.reminded.join(", ")}`);
   if (od?.retry_later?.length)
     parts.push(`reminder for ${od.retry_later.join(", ")} will be retried`);
-  return parts.length ? parts.join(" · ") : "Jobs ran; nothing new was due.";
+  return parts.length
+    ? `${parts.map((p) => p[0].toUpperCase() + p.slice(1)).join(". ")}.`
+    : "Jobs ran; nothing new was due.";
 }
 
 /** Demo-only time jump: moves the shared app clock and runs the background jobs at the new time. */

@@ -1,10 +1,9 @@
 "use client";
 
 import clsx from "clsx";
-import { MailCheck, Phone } from "lucide-react";
 import Link from "next/link";
 import { useApi } from "@/lib/api";
-import { dateOnly, inr } from "@/lib/format";
+import { inr, relDay } from "@/lib/format";
 import { SectionTitle } from "./ui";
 
 type CallPromise = {
@@ -21,9 +20,9 @@ type CallPromise = {
 };
 
 const STATE: Record<CallPromise["promise_state"], { label: (d: string | null) => string; tone: string }> = {
-  broken: { label: (d) => `Promised ${d ? dateOnly(d) : ""}, still unpaid`, tone: "text-amber" },
+  broken: { label: (d) => `Promised ${d ? relDay(d) : ""}, still unpaid`, tone: "text-amber" },
   today: { label: () => "Promised today", tone: "text-text" },
-  upcoming: { label: (d) => `Promised by ${d ? dateOnly(d) : ""}`, tone: "text-muted" },
+  upcoming: { label: (d) => `Promised by ${d ? relDay(d) : ""}`, tone: "text-muted" },
   none: { label: () => "Said they'll pay", tone: "text-muted" },
 };
 
@@ -37,7 +36,7 @@ export function PromisedPayments() {
     <section className="panel min-w-0 p-5 sm:p-6" aria-labelledby="promises-title">
       <SectionTitle
         title="Promised on calls"
-        sub={`${rows.length} customer${rows.length === 1 ? "" : "s"} promised to pay${broken ? ` · ${broken} missed the date` : ""}`}
+        sub={`${rows.length} customer${rows.length === 1 ? "" : "s"} promised to pay${broken ? `, ${broken} missed the date` : ""}`}
       />
       <h2 id="promises-title" className="sr-only">
         Promised on calls
@@ -56,20 +55,17 @@ export function PromisedPayments() {
                     : "border-line hover:border-line-strong",
                 )}
               >
-                <Phone size={16} className="mt-1 shrink-0 text-blue" aria-hidden />
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-baseline justify-between gap-x-3">
                     <span className="font-semibold">{r.payer_name}</span>
-                    <span className="num font-mono">{inr(r.amount_paise)}</span>
+                    <span className="num">{inr(r.amount_paise)}</span>
                   </p>
-                  <p className="text-sm">
+                  <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
                     <span className={st.tone}>{st.label(r.promised_date)}</span>
-                    <span className="font-mono text-xs text-faint"> · {r.number}</span>
+                    <span className="text-xs text-faint">{r.number}</span>
                   </p>
                   {r.call_link_sent_at ? (
-                    <p className="mt-0.5 flex items-center gap-1 text-xs text-mint">
-                      <MailCheck size={12} aria-hidden /> Link sent during the call
-                    </p>
+                    <p className="mt-0.5 text-xs text-mint">Link sent during the call</p>
                   ) : null}
                 </div>
               </Link>

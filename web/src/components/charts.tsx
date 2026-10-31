@@ -211,7 +211,7 @@ export function TrendChart({
                 y={y(t)}
                 dy="0.32em"
                 textAnchor="end"
-                className="fill-faint font-mono text-[11px]"
+                className="fill-faint num text-xs"
               >
                 {inrCompact(t)}
               </text>
@@ -259,7 +259,7 @@ export function TrendChart({
                 strokeWidth={4}
                 strokeLinejoin="round"
                 paintOrder="stroke"
-                className="fill-muted font-mono text-[11px]"
+                className="fill-muted num text-xs"
               >
                 so far
               </text>
@@ -278,7 +278,7 @@ export function TrendChart({
                       ? "end"
                       : "middle"
                 }
-                className="fill-muted font-mono text-[12px]"
+                className="fill-muted num text-xs"
               >
                 {labelText(i)}
               </text>
@@ -318,7 +318,7 @@ export function TrendChart({
               false,
             )}
           </p>
-          <p className="num font-mono font-medium text-text">
+          <p className="num font-medium text-text">
             {inr(points[shown].total_paise)}
           </p>
           <p className="text-muted">
@@ -372,7 +372,7 @@ export function PeakHoursHeatmap({ cells }: { cells: HeatCell[] }) {
       >
         {DOW.map((d, di) => (
           <div key={d} className="contents">
-            <div className="pr-2 text-right font-mono text-xs leading-5 text-faint">
+            <div className="pr-2 text-right num text-xs leading-5 text-faint">
               {d}
             </div>
             {HOURS.map((h) => {
@@ -398,12 +398,12 @@ export function PeakHoursHeatmap({ cells }: { cells: HeatCell[] }) {
         ))}
         <div />
         {HOURS.map((h) => (
-          <div key={h} className="pt-1 text-center font-mono text-[11px] whitespace-nowrap text-faint">
+          <div key={h} className="pt-1 text-center num text-xs whitespace-nowrap text-faint">
             {h % 3 === 0 ? hourLabel(h).replace(" ", "") : ""}
           </div>
         ))}
       </div>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[13px] text-faint">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-faint">
         <span aria-live="polite" className="min-h-4">
           {hover
             ? `${DOW[hover.dow - 1]} ${hourLabel(hover.hour)}: ${inr(hover.total_paise)} from ${hover.txn_count} payment${hover.txn_count === 1 ? "" : "s"}`
@@ -509,7 +509,7 @@ export function MonthlyBars({
                     x={cx}
                     y={top - 7}
                     textAnchor="middle"
-                    className="fill-text font-mono text-[12px] font-medium"
+                    className="fill-text num text-xs font-medium"
                   >
                     {inrCompact(m.total_paise)}
                   </text>
@@ -518,7 +518,7 @@ export function MonthlyBars({
                   x={cx}
                   y={height - 6}
                   textAnchor="middle"
-                  className="fill-muted font-mono text-[12px]"
+                  className="fill-muted num text-xs"
                 >
                   {dateOnly(`${m.month}-01`, { month: "short" })}
                 </text>

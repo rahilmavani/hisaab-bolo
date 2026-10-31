@@ -9,7 +9,7 @@ import { InvoiceStatusText, isOverdue } from "@/components/invoice-status";
 import { NewInvoiceDialog } from "@/components/new-invoice-dialog";
 import { ErrorNote, SectionTitle, Skeleton } from "@/components/ui";
 import { api, useApi } from "@/lib/api";
-import { dateOnly, inr, istDate, istISODate } from "@/lib/format";
+import { inr, istISODate, relDate } from "@/lib/format";
 import type { Invoice, InvoiceList } from "@/lib/types";
 
 type RowState = {
@@ -172,7 +172,7 @@ export default function CollectionsPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[1.9rem] leading-tight font-semibold tracking-tight sm:text-[2.2rem]">
+          <h1 className="text-3xl leading-tight font-semibold tracking-tight">
             Collections
           </h1>
           <p className="text-muted">
@@ -196,7 +196,7 @@ export default function CollectionsPage() {
             isLoading || !data
               ? "Loading…"
               : open.length
-                ? `${inr(data.outstanding_paise)} outstanding · ${data.outstanding_customers} customer${data.outstanding_customers === 1 ? "" : "s"}`
+                ? `${inr(data.outstanding_paise)} outstanding from ${data.outstanding_customers} customer${data.outstanding_customers === 1 ? "" : "s"}`
                 : "Nothing outstanding"
           }
         />
@@ -204,7 +204,7 @@ export default function CollectionsPage() {
           <Skeleton className="h-40" />
         ) : open.length ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-[0.97rem] @xl:min-w-[560px]">
+            <table className="w-full text-left text-sm @xl:min-w-[560px]">
               <thead className="text-sm text-muted">
                 <tr className="border-b border-line">
                   <th className="py-2 font-normal">Customer</th>
@@ -228,11 +228,11 @@ export default function CollectionsPage() {
                           >
                             {inv.payer_name}
                           </Link>
-                          <span className="block font-mono text-xs text-faint">
-                            {inv.number} · due {dateOnly(inv.due_date)}
+                          <span className="block text-xs text-faint">
+                            {inv.number}
                           </span>
                         </td>
-                        <td className="num py-3 pr-6 text-right font-mono">
+                        <td className="num py-3 pr-6 text-right">
                           {inr(inv.amount_paise)}
                         </td>
                         <td className="py-3">
@@ -243,14 +243,16 @@ export default function CollectionsPage() {
                           />
                           <span className="block text-xs text-faint">
                             {inv.last_reminded_at
-                              ? `Last emailed ${istDate(inv.last_reminded_at)}`
+                              ? `Emailed ${relDate(inv.last_reminded_at)}`
                               : "Not emailed"}
                           </span>
                           {inv.last_called_at ? (
                             <span className="block text-xs text-faint">
-                              Called {istDate(inv.last_called_at)} ·{" "}
-                              {callOutcomeText(inv.last_call_outcome, inv.last_call_promised_date) ??
-                                callStatusLabel(inv.last_call_status).text}
+                              Called {relDate(inv.last_called_at)}:{" "}
+                              {(
+                                callOutcomeText(inv.last_call_outcome, inv.last_call_promised_date) ??
+                                callStatusLabel(inv.last_call_status).text
+                              ).toLowerCase()}
                             </span>
                           ) : null}
                         </td>
@@ -270,10 +272,12 @@ export default function CollectionsPage() {
             </table>
           </div>
         ) : (
-          <p className="text-muted">
-            Every invoice is paid. Create one to collect money with a Paytm link
-            and QR.
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-muted">No unpaid invoices.</p>
+            <button className="btn btn-quiet px-3 py-1.5 text-sm" onClick={() => setCreating(true)} disabled={!me}>
+              <Plus size={14} aria-hidden /> New invoice
+            </button>
+          </div>
         )}
         {remindable.length ? (
           <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -286,7 +290,7 @@ export default function CollectionsPage() {
               reminder{remindable.length === 1 ? "" : "s"}
             </button>
             <span className="text-sm text-muted" role="status">
-              {bulk ?? "Email now, with the same Paytm link and QR."}
+              {bulk}
             </span>
           </div>
         ) : null}
@@ -307,16 +311,16 @@ export default function CollectionsPage() {
                 >
                   <span>
                     {inv.payer_name}
-                    <span className="block font-mono text-xs text-faint">
+                    <span className="block text-xs text-faint">
                       {inv.number}
                     </span>
                   </span>
                   <span className="text-right">
-                    <span className="num block font-mono">
+                    <span className="num block">
                       {inr(inv.amount_paise)}
                     </span>
                     <span className="text-sm text-mint">
-                      Paid {inv.paid_at ? istDate(inv.paid_at) : ""}
+                      Paid {inv.paid_at ? relDate(inv.paid_at) : ""}
                     </span>
                   </span>
                 </Link>

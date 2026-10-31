@@ -65,18 +65,18 @@ test.describe("tester r4 · M4 regression on the demo clock", () => {
     await dashboard.goto("/");
     const pending = dashboard.locator("section", { hasText: "Pending payments" });
     await expect(pending.getByRole("row", { name: new RegExp(`Hema Bhat.*${inv.number}.*₹777.*Due in 7 days`) })).toBeVisible();
-    const total = await pending.getByText(/outstanding ·/).textContent();
+    const total = await pending.getByText(/outstanding from/).textContent();
 
     const payer = await context.newPage();
     await payer.goto(inv.link);
     await payer.getByRole("button", { name: "Pay ₹777" }).click();
     await expect(payer.getByText("Payment successful")).toBeVisible();
 
-    await expect(page.getByTestId("invoice-status")).toHaveText("Paid · auto-matched", { timeout: 15_000 });
-    await expect(pending.getByRole("row", { name: new RegExp(`Hema Bhat.*${inv.number}.*Paid · auto-matched`) })).toBeVisible({
+    await expect(page.getByTestId("invoice-status")).toHaveText("Paid", { timeout: 15_000 });
+    await expect(pending.getByRole("row", { name: new RegExp(`Hema Bhat.*${inv.number}.*Paid`) })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(pending.getByText(/outstanding ·/)).not.toHaveText(total ?? "");
+    await expect(pending.getByText(/outstanding from/)).not.toHaveText(total ?? "");
     await shot(dashboard, "r4-e2e-01-dashboard-paid-live-after-clock-jump");
     await shot(page, "r4-e2e-02-invoice-paid-live-after-clock-jump");
     expect([...errors, ...dErrors]).toEqual([]);
@@ -93,22 +93,22 @@ test.describe("tester r4 · M4 regression on the demo clock", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "+1 day" }).click();
     const pending = page.locator("section", { hasText: "Pending payments" });
-    await expect(pending.getByRole("row", { name: new RegExp(`Suresh Bhatt.*${inv.number}.*Paid · auto-matched`) })).toBeVisible({
+    await expect(pending.getByRole("row", { name: new RegExp(`Suresh Bhatt.*${inv.number}.*Paid`) })).toBeVisible({
       timeout: 20_000,
     });
     await shot(page, "r4-e2e-03-dropped-webhook-settled-by-tick");
     await page.goto(inv.url);
-    await expect(page.getByTestId("invoice-status")).toHaveText("Paid · auto-matched");
+    await expect(page.getByTestId("invoice-status")).toHaveText("Paid");
     await expect(page.getByText("Paid and matched")).toBeVisible();
   });
 
   test("overdue reminder from Collections uses the same link; the bulk button counts real overdue rows", async ({ page }) => {
     await page.goto("/collections");
-    const sharma = page.getByRole("row", { name: /Sharma Traders.*INV-0412.*Overdue · \d+ days/ });
+    const sharma = page.getByRole("row", { name: /Sharma Traders.*INV-0412.*\d+ days overdue/ });
     await expect(sharma).toBeVisible();
     await sharma.getByRole("button", { name: "Send reminder" }).click();
     await expect(sharma.getByRole("status")).toHaveText("Reminder sent to accounts@sharmatraders.in");
-    const overdueRows = page.getByRole("row").filter({ hasText: /Overdue ·/ });
+    const overdueRows = page.getByRole("row").filter({ hasText: /days? overdue/ });
     const n = await overdueRows.count();
     await expect(page.getByRole("button", { name: new RegExp(`Send ${n} overdue reminders?`) })).toBeVisible();
     await shot(page, "r4-e2e-04-collections-reminder");

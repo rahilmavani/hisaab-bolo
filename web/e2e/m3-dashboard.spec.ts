@@ -12,13 +12,13 @@ test.describe("M3 dashboard and ledger", () => {
     await expect(page.getByRole("img", { name: /Collections by day/ })).toBeVisible();
 
     const pending = page.locator("section", { hasText: "Pending payments" });
-    await expect(pending.getByText("₹11,700 outstanding · 2 customers")).toBeVisible();
-    await expect(pending.getByRole("row", { name: /Sharma Traders.*₹8,500.*Overdue · 9 days/ })).toBeVisible();
+    await expect(pending.getByText("₹11,700 outstanding from 2 customers")).toBeVisible();
+    await expect(pending.getByRole("row", { name: /Sharma Traders.*₹8,500.*9 days overdue/ })).toBeVisible();
     await expect(pending.getByRole("row", { name: /Priya Caterers.*₹3,200.*Due tomorrow/ })).toBeVisible();
 
     const quiet = page.locator("section", { hasText: "Gone quiet" });
     await expect(quiet.getByText("Meena Kapoor")).toBeVisible();
-    await expect(quiet.getByText(/last paid 12 days ago/)).toBeVisible();
+    await expect(quiet.getByText(/Last paid 12 days ago/)).toBeVisible();
 
     await expect(page.getByText(/^Busiest: /)).toBeVisible();
     const height = await page.evaluate(() => document.documentElement.scrollHeight);
@@ -41,9 +41,9 @@ test.describe("M3 dashboard and ledger", () => {
   test("customer search finds Ram with his habit line", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("searchbox").fill("ram");
-    const row = page.getByRole("link", { name: /Ram · ram@paytm/ });
+    const row = page.getByRole("link", { name: /Ram.*ram@paytm/ });
     await expect(row).toBeVisible();
-    await expect(row).toContainText("₹100 daily, ~8:30 AM · 121 payments since");
+    await expect(row).toContainText(/₹100 daily, ~8:30 AM.*121 payments since/);
     await expect(row).toContainText("Regular");
     await shot(page, "m3", "03-search-ram");
     await row.click();
@@ -97,14 +97,14 @@ test.describe("M3 dashboard and ledger", () => {
     await dialog.getByLabel("GSTIN").fill("07AABCP1234C1Z9");
     await dialog.getByRole("button", { name: "Save changes" }).click();
     await expect(dialog).toBeHidden();
-    await expect(page.getByText("GSTIN 07AABCP1234C1Z9")).toBeVisible();
+    await expect(page.getByText("07AABCP1234C1Z9", { exact: true })).toBeVisible();
     await shot(page, "m3", "06-payer-edited");
   });
 
   test("merge dialog previews what moves before merging", async ({ page }) => {
     await page.goto("/customers");
     await page.getByRole("searchbox").fill("ram");
-    await page.getByRole("link", { name: /Ram · ram@paytm/ }).click();
+    await page.getByRole("link", { name: /Ram.*ram@paytm/ }).click();
     await page.getByRole("button", { name: "Merge duplicate" }).click();
     const dialog = page.getByRole("dialog", { name: "Merge into Ram" });
     await dialog.getByRole("searchbox").fill("vikram");

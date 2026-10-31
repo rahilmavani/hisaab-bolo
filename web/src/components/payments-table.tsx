@@ -98,7 +98,7 @@ export function PaymentsTable({ txns, onChange }: { txns: Txn[]; onChange: (t: T
   const shown = showAll ? txns : txns.slice(0, PAGE);
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[560px] text-left text-[0.95rem]">
+      <table className="w-full min-w-[560px] text-left text-base">
         <thead className="text-sm text-muted">
           <tr className="border-b border-line">
             <th className="py-2 font-normal">When</th>
@@ -113,7 +113,7 @@ export function PaymentsTable({ txns, onChange }: { txns: Txn[]; onChange: (t: T
               <td className="py-2.5 whitespace-nowrap">
                 {istDate(t.paid_at)} <span className="text-muted">{istTime(t.paid_at)}</span>
               </td>
-              <td className="num py-2.5 pr-6 text-right font-mono whitespace-nowrap">{inr(t.amount_paise)}</td>
+              <td className="num py-2.5 pr-6 text-right whitespace-nowrap">{inr(t.amount_paise)}</td>
               <td className="py-2.5">
                 <DescriptionCell txn={t} onSaved={onChange} />
               </td>

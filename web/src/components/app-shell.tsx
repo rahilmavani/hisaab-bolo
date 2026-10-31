@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { useApi } from "@/lib/api";
-import { istDayLabel, istTime } from "@/lib/format";
+import { istDayLabel, istTime, setAppNow } from "@/lib/format";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { Me } from "@/lib/types";
 import { AskPanel } from "./ask/ask-panel";
@@ -24,14 +24,7 @@ export function useMe() {
 }
 
 function BrandMark() {
-  return (
-    <span className="flex items-center gap-2.5">
-      <span aria-hidden className="grid h-7 w-7 place-items-center rounded-lg bg-blue text-base leading-none font-medium text-white">
-        ₹
-      </span>
-      <span className="text-[17px] leading-none font-medium">Hisaab Bolo</span>
-    </span>
-  );
+  return <span className="text-lg leading-none font-semibold tracking-tight">Hisaab Bolo</span>;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -39,6 +32,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { data: me } = useMe();
   const [askOpen, setAskOpen] = useState(false);
+  // Relative dates ("today", "yesterday") follow the app clock, which the demo clock can move.
+  if (me) setAppNow(me.now);
 
   async function signOut() {
     await supabaseBrowser().auth.signOut();
@@ -61,7 +56,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               href={href}
               aria-current={isActive(href) ? "page" : undefined}
               className={clsx(
-                "flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[15px] transition-colors",
+                "flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors",
                 isActive(href)
                   ? "bg-card text-text shadow-[inset_0_0_0_1px_var(--color-line)]"
                   : "text-muted hover:bg-raised hover:text-text",

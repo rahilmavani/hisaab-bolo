@@ -72,7 +72,7 @@ test.describe("tester r7 · M5 dues billed by a clock jump, manual nudge in grac
 
     await jump(page, "+1 day");
     await jump(page, "+7 days");
-    await expect(clockStatus(page)).toContainText(`reminder sent for ${first}`);
+    await expect(clockStatus(page)).toContainText(new RegExp(`reminder sent for ${first}`, "i"));
     await page.reload();
     const rows = invoicesCard(page).getByRole("listitem");
     await expect(rows).toHaveCount(2);
@@ -80,12 +80,12 @@ test.describe("tester r7 · M5 dues billed by a clock jump, manual nudge in grac
     expect(second).not.toBe(first);
 
     await invoicesCard(page).getByRole("link", { name: first }).click();
-    await expect(page.getByTestId("invoice-status")).toHaveText(/Overdue/);
+    await expect(page.getByTestId("invoice-status")).toHaveText(/overdue/);
     await expect(page.getByText("Overdue reminder emailed")).toHaveCount(1);
     await page.goBack();
 
     await invoicesCard(page).getByRole("link", { name: second }).click();
-    await expect(page.getByTestId("invoice-status")).toHaveText(/Past due · 1 day, in grace/);
+    await expect(page.getByTestId("invoice-status")).toHaveText(/1 day late, in grace period/);
     await shot(page, "r7-e2e-01-due-billed-by-clock-jump");
     await expect(
       page.getByText(/^Not emailed yet/),
@@ -103,7 +103,7 @@ test.describe("tester r7 · M5 dues billed by a clock jump, manual nudge in grac
     await jump(page, "+1 day");
     await page.reload();
     await invoicesCard(page).getByRole("link", { name: first }).click();
-    await expect(page.getByTestId("invoice-status")).toHaveText("Past due · 1 day, in grace");
+    await expect(page.getByTestId("invoice-status")).toHaveText("1 day late, in grace period");
     await page.getByRole("button", { name: "Send reminder" }).click();
     await expect(page.getByRole("status").filter({ hasText: "emailed to naveen.dubey@example.com" })).toBeVisible();
 
@@ -111,7 +111,7 @@ test.describe("tester r7 · M5 dues billed by a clock jump, manual nudge in grac
     await jump(page, "+1 day");
     await jump(page, "+1 day"); // due + 3 days grace has passed: overdue now
     await page.reload();
-    await expect(page.getByTestId("invoice-status")).toHaveText(/^Overdue · 4 days$/);
+    await expect(page.getByTestId("invoice-status")).toHaveText(/^4 days overdue$/);
     await shot(page, "r7-e2e-02-manual-nudge-in-grace-then-overdue");
     await expect(
       page.getByText("Overdue reminder emailed"),
