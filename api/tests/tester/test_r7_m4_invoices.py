@@ -10,9 +10,11 @@ Writes use the throwaway `other_merchant`; the demo merchant is re-seeded after 
 
 from __future__ import annotations
 
+import secrets
 from datetime import date, timedelta
 
 import pytest
+from psycopg.types.json import Jsonb
 
 from app.services import email as email_svc
 
@@ -52,6 +54,19 @@ async def new_invoice(api, m, db, **extra) -> dict:
     return r.json()
 
 
+def pending_action(db, m, tool: str, args: dict) -> str:
+    token = "pa_r7_" + secrets.token_urlsafe(8)
+    db.execute(
+        "insert into pending_actions (token, merchant_id, tool, args, summary, expires_at) "
+        "values (%s, %s, %s, %s, '{}', app_now() + interval '15 minutes')",
+        (token, m["merchant_id"], tool, Jsonb(args)),
+    )
+    return token
+
+
+# ---------------------------------------------------------------------------
+# Moment 2, quickly re-verified
+# ---------------------------------------------------------------------------
 async def test_moment2_email_with_link_and_qr_then_gateway_payment_marks_paid_once(api, other_merchant, db,
                                                                                   webhook_via_app):
     m, h = other_merchant, bearer(other_merchant["token"])
@@ -92,6 +107,40 @@ async def test_the_link_of_a_cancelled_invoice_cannot_be_paid_on_the_mock_gatewa
 
 # ---------------------------------------------------------------------------
 # Invoices and schedules created by a confirmed Ask Hisaab action
+# ---------------------------------------------------------------------------
+async def test_a_confirmed_create_invoice_action_builds_link_qr_and_email(api, other_merchant, db):
+    m = other_merchant
+    due = (today(db) + timedelta(days=5)).isoformat()
+    token = pending_action(db, m, "create_invoice", {
+        "payer_id": str(m["payer_a"]), "amount_paise": 500_00, "due_date": due,
+        "line_items": [{"name": "Diwali hamper", "qty": 1, "unit_price_paise": 500_00}], "email": "asha@example.com"})
+    r = await api.post(f"/actions/{token}/confirm", headers=bearer(m["token"]))
+    assert r.status_code == 200, r.text
+    out = r.json()
+    inv = out["invoice"]
+    assert out["message"] == f"Invoice {inv['number']} created and emailed"
+    assert inv["status"] == "sent" and inv["link_url"] and inv["qr_image_url"] and inv["amount_paise"] == 500_00
+    assert [e["intended_to"] for e in email_svc.SENT] == ["asha@example.com"]
+    again = await api.post(f"/actions/{token}/confirm", headers=bearer(m["token"]))
+    assert again.status_code == 409
+    assert db.execute("select count(*) as n from invoices where payer_id = %s", (m["payer_a"],)).fetchone()["n"] == 1
+
+
+async def test_a_confirmed_set_recurring_action_bills_and_emails_the_first_due(api, other_merchant, db, restore_clock):
+    m = other_merchant
+    token = pending_action(db, m, "set_recurring", {
+        "payer_id": str(m["payer_a"]), "cadence": "weekly", "amount_paise": 300_00, "email": "asha@example.com"})
+    r = await api.post(f"/actions/{token}/confirm", headers=bearer(m["token"]))
+    assert r.status_code == 200, r.text
+    out = r.json()
+    assert out["message"] == "Marked recurring"
+    [due] = out["dues_created"]
+    assert due["emailed"] is True and due["due_date"] == today(db).isoformat()
+    assert [e["intended_to"] for e in email_svc.SENT] == ["asha@example.com"]
+
+
+# ---------------------------------------------------------------------------
+# Dropped webhook + the 5-minute check, after the demo clock is reset
 # ---------------------------------------------------------------------------
 async def test_the_five_minute_check_finds_a_dropped_payment_on_an_invoice_made_before_a_clock_reset(
         api, other_merchant, db, settings, restore_clock):

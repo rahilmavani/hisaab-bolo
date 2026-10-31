@@ -64,7 +64,11 @@ export type OpenInvoice = {
 };
 
 export type PayerProfile = Payer & {
-  identifiers: { kind: "vpa" | "phone" | "email" | "paytm_cust_id"; value: string; created_at: string }[];
+  identifiers: {
+    kind: "vpa" | "phone" | "email" | "paytm_cust_id";
+    value: string;
+    created_at: string;
+  }[];
   monthly: { month: string; total_paise: number; txn_count: number }[];
   transactions: Txn[];
   invoices: {
@@ -100,8 +104,20 @@ export type PayerProfile = Payer & {
   } | null;
 };
 
-export type TrendPoint = { bucket: string; total_paise: number; txn_count: number };
-export type HeatCell = { dow: number; hour: number; total_paise: number; txn_count: number };
+// label_bucket: a first point that starts mid-bucket (a 3-month chart from 31 Jul) is labelled by the
+// bucket it mostly covers ("Aug").
+export type TrendPoint = {
+  bucket: string;
+  total_paise: number;
+  txn_count: number;
+  label_bucket?: string;
+};
+export type HeatCell = {
+  dow: number;
+  hour: number;
+  total_paise: number;
+  txn_count: number;
+};
 
 export type DashboardSummary = {
   now: string;
@@ -134,7 +150,14 @@ export type DashboardSummary = {
     total_paise: number;
     customers: number;
     invoices: OpenInvoice[];
-    recently_paid: { id: string; number: string; payer_id: string; payer_name: string; amount_paise: number; paid_at: string }[];
+    recently_paid: {
+      id: string;
+      number: string;
+      payer_id: string;
+      payer_name: string;
+      amount_paise: number;
+      paid_at: string;
+    }[];
   };
 };
 
@@ -167,13 +190,19 @@ export type Invoice = {
   created_at: string;
   last_reminded_at: string | null;
   reminder_count: number;
-  paytm_raw?: { last_failure?: { RESPMSG?: string; TXNDATE?: string; STATUS?: string } };
+  paytm_raw?: {
+    last_failure?: { RESPMSG?: string; TXNDATE?: string; STATUS?: string };
+  };
   email_error?: string | null;
 };
 
 export type InvoiceDetail = Invoice & {
   merchant_name: string;
-  reminders: { kind: "invoice" | "overdue"; to_email: string | null; sent_at: string }[];
+  reminders: {
+    kind: "invoice" | "overdue";
+    to_email: string | null;
+    sent_at: string;
+  }[];
   payment: {
     id: string;
     amount_paise: number;
@@ -184,7 +213,11 @@ export type InvoiceDetail = Invoice & {
   } | null;
 };
 
-export type InvoiceList = { invoices: Invoice[]; outstanding_paise: number; outstanding_customers: number };
+export type InvoiceList = {
+  invoices: Invoice[];
+  outstanding_paise: number;
+  outstanding_customers: number;
+};
 
 export type PendingAction = {
   token: string;
@@ -194,8 +227,24 @@ export type PendingAction = {
 };
 
 export type AskComponent =
-  | { type: "stat_cards"; result_id: string; data: { items: { label: string; value?: number; value_paise?: number | null; value_text?: string; sub?: string | null }[] } }
-  | { type: "line_chart"; result_id: string; data: { grain: "day" | "week" | "month"; points: TrendPoint[] } }
+  | {
+      type: "stat_cards";
+      result_id: string;
+      data: {
+        items: {
+          label: string;
+          value?: number;
+          value_paise?: number | null;
+          value_text?: string;
+          sub?: string | null;
+        }[];
+      };
+    }
+  | {
+      type: "line_chart";
+      result_id: string;
+      data: { grain: "day" | "week" | "month"; points: TrendPoint[] };
+    }
   | {
       type: "table";
       result_id: string;
@@ -227,7 +276,13 @@ export type AskComponent =
     }
   | { type: "invoice_card"; result_id: string; data: Record<string, unknown> }
   | { type: "confirm_action"; result_id?: string; data: PendingAction }
-  | { type: "chips"; result_id: string; data: { choices: { payer_id: string; label: string; sub: string | null }[] } };
+  | {
+      type: "chips";
+      result_id: string;
+      data: {
+        choices: { payer_id: string; label: string; sub: string | null }[];
+      };
+    };
 
 export type AskResponse = {
   query_id: string;

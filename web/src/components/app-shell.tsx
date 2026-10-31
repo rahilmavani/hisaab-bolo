@@ -1,14 +1,15 @@
 "use client";
 
 import clsx from "clsx";
-import { LayoutDashboard, LogOut, ReceiptIndianRupee, Users } from "lucide-react";
+import { LayoutDashboard, LogOut, Mic, ReceiptIndianRupee, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useApi } from "@/lib/api";
 import { istDayLabel, istTime } from "@/lib/format";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { Me } from "@/lib/types";
+import { AskPanel } from "./ask/ask-panel";
 import { DemoClock } from "./demo-clock";
 import { LiveUpdates } from "./live-updates";
 
@@ -41,6 +42,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: me } = useMe();
+  const [askOpen, setAskOpen] = useState(false);
 
   async function signOut() {
     await supabaseBrowser().auth.signOut();
@@ -97,20 +99,31 @@ export function AppShell({ children }: { children: ReactNode }) {
             <LogOut size={18} />
           </button>
         </header>
-        {/* A size container: pages lay out by the space they get. */}
-        <main className="@container min-w-0 flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-10 lg:pt-8 lg:pb-12">
-          {children}
-          {me?.demo_tools ? (
-            <div className="mt-8 lg:hidden">
-              <DemoClock me={me} />
-            </div>
-          ) : null}
-        </main>
+        <div className="min-w-0 flex-1 xl:grid xl:grid-cols-[minmax(0,1fr)_400px]">
+          {/* A size container: pages lay out by the space they get (the Ask panel docks beside them on xl). */}
+          <main className="@container min-w-0 px-4 pt-5 pb-28 sm:px-6 lg:px-10 lg:pt-8 lg:pb-12">
+            {children}
+            {me?.demo_tools ? (
+              <div className="mt-8 lg:hidden">
+                <DemoClock me={me} />
+              </div>
+            ) : null}
+          </main>
+          <AskPanel open={askOpen} onClose={() => setAskOpen(false)} />
+        </div>
       </div>
+
+      {/* Between the phone tab bar and the docked panel (lg–xl), a floating button opens Ask Hisaab. */}
+      <button
+        onClick={() => setAskOpen(true)}
+        className="fixed right-6 bottom-6 z-30 hidden items-center gap-2 rounded-full bg-blue px-5 py-3 font-semibold text-white shadow-xl hover:bg-blue-strong lg:flex xl:hidden"
+      >
+        <Mic size={18} aria-hidden /> Ask Hisaab
+      </button>
 
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-line bg-ink/90 backdrop-blur lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-ink/90 backdrop-blur lg:hidden"
       >
         {NAV.map(({ href, label, icon: Icon }) => (
           <Link
@@ -123,6 +136,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             {label}
           </Link>
         ))}
+        <button onClick={() => setAskOpen(true)} className="flex flex-col items-center gap-0.5 py-2.5 text-xs text-sky">
+          <Mic size={20} aria-hidden />
+          Ask
+        </button>
       </nav>
 
       {me ? <LiveUpdates merchantId={me.merchant.id} /> : null}

@@ -365,19 +365,22 @@ def trend_start(end_day: date, days: int, grain: Grain) -> date:
     return min(start, end_day)
 
 
-async def trend(conn: AsyncConnection, merchant_id: UUID, end_day: date, days: int, grain: Grain) -> list[dict]:
+async def trend(conn: AsyncConnection, merchant_id: UUID, end_day: date, days: int, grain: Grain,
+                start: date | None = None) -> list[dict]:
+    """Buckets ending at end_day. By default whole weeks/months only (the dashboard's chart); with an exact
+    start, the first bucket is partial so the chart covers exactly start..end_day (the agent's totals)."""
     trunc = {"day": "day", "week": "week", "month": "month"}[grain]
     return await fetch_all(
         conn,
         f"""
-        select date_trunc('{trunc}', g.day)::date as bucket,
+        select greatest(date_trunc('{trunc}', g.day)::date, %(start)s::date) as bucket,
                coalesce(sum(dt.total_paise), 0)::bigint as total_paise,
                coalesce(sum(dt.txn_count), 0)::int as txn_count
           from generate_series(%(start)s::date, %(end)s::date, interval '1 day') g(day)
           left join daily_totals dt on dt.merchant_id = %(m)s and dt.day = g.day::date
          group by 1 order by 1
         """,
-        {"m": merchant_id, "start": trend_start(end_day, days, grain), "end": end_day},
+        {"m": merchant_id, "start": start or trend_start(end_day, days, grain), "end": end_day},
     )
 
 

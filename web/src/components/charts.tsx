@@ -1,8 +1,21 @@
 "use client";
 
 import { area as d3area, curveMonotoneX, line as d3line } from "d3-shape";
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { dateOnly, hourLabel, inr, inrCompact, weekdayShort } from "@/lib/format";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
+import {
+  dateOnly,
+  hourLabel,
+  inr,
+  inrCompact,
+  weekdayShort,
+} from "@/lib/format";
 import type { HeatCell, TrendPoint } from "@/lib/types";
 
 const SURFACE = "#0c1634";
@@ -14,7 +27,9 @@ function useWidth<T extends HTMLElement>() {
   const [width, setWidth] = useState(0);
   useEffect(() => {
     if (!ref.current) return;
-    const ro = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
+    const ro = new ResizeObserver(([entry]) =>
+      setWidth(entry.contentRect.width),
+    );
     ro.observe(ref.current);
     return () => ro.disconnect();
   }, []);
@@ -56,7 +71,9 @@ export function TrendChart({
   const innerW = Math.max(0, width - pad.left - pad.right);
   const innerH = height - pad.top - pad.bottom;
   const max = niceMax(Math.max(...points.map((p) => p.total_paise), 0));
-  const x = (i: number) => pad.left + (points.length <= 1 ? innerW / 2 : (i / (points.length - 1)) * innerW);
+  const x = (i: number) =>
+    pad.left +
+    (points.length <= 1 ? innerW / 2 : (i / (points.length - 1)) * innerW);
   const y = (v: number) => pad.top + innerH - (v / max) * innerH;
 
   const { linePath, areaPath } = useMemo(() => {
@@ -75,11 +92,15 @@ export function TrendChart({
 
   const ticks = [0, max / 2, max];
   const short = grain === "day" && points.length <= 8;
-  const labelEvery = Math.max(1, Math.ceil(points.length / Math.max(2, Math.floor(innerW / 64))));
+  const labelEvery = Math.max(
+    1,
+    Math.ceil(points.length / Math.max(2, Math.floor(innerW / 64))),
+  );
   const last = points.length - 1;
   // The last label always shows; drop regular labels that would collide with it.
   const minGap = short ? 34 : grain === "week" ? 78 : 54;
-  const labelled = (i: number) => i === last || (i % labelEvery === 0 && x(last) - x(i) >= minGap);
+  const labelled = (i: number) =>
+    i === last || (i % labelEvery === 0 && x(last) - x(i) >= minGap);
   const dashFrom = partialLast && points.length > 1 ? x(last - 1) : null;
   const clipId = `${gradId}-clip`;
   const shown = active ?? null;
@@ -91,8 +112,10 @@ export function TrendChart({
   }
 
   function onKey(e: KeyboardEvent) {
-    if (e.key === "ArrowRight") setActive((a) => Math.min(last, (a ?? last) + (a === null ? 0 : 1)));
-    else if (e.key === "ArrowLeft") setActive((a) => Math.max(0, (a ?? last) - 1));
+    if (e.key === "ArrowRight")
+      setActive((a) => Math.min(last, (a ?? last) + (a === null ? 0 : 1)));
+    else if (e.key === "ArrowLeft")
+      setActive((a) => Math.max(0, (a ?? last) - 1));
     else if (e.key === "Escape") setActive(null);
   }
 
@@ -107,7 +130,9 @@ export function TrendChart({
           tabIndex={0}
           onKeyDown={onKey}
           onBlur={() => setActive(null)}
-          onPointerMove={(e) => onMove(e.clientX, e.currentTarget.getBoundingClientRect())}
+          onPointerMove={(e) =>
+            onMove(e.clientX, e.currentTarget.getBoundingClientRect())
+          }
           onPointerLeave={() => setActive(null)}
           className="block touch-pan-y outline-none"
         >
@@ -122,15 +147,33 @@ export function TrendChart({
                   <rect x={0} y={0} width={dashFrom} height={height} />
                 </clipPath>
                 <clipPath id={`${clipId}-dash`}>
-                  <rect x={dashFrom} y={0} width={width - dashFrom} height={height} />
+                  <rect
+                    x={dashFrom}
+                    y={0}
+                    width={width - dashFrom}
+                    height={height}
+                  />
                 </clipPath>
               </>
             ) : null}
           </defs>
           {ticks.map((t) => (
             <g key={t}>
-              <line x1={pad.left} x2={width - pad.right} y1={y(t)} y2={y(t)} stroke={GRID} strokeWidth={1} />
-              <text x={pad.left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="fill-faint text-[11px]">
+              <line
+                x1={pad.left}
+                x2={width - pad.right}
+                y1={y(t)}
+                y2={y(t)}
+                stroke={GRID}
+                strokeWidth={1}
+              />
+              <text
+                x={pad.left - 8}
+                y={y(t)}
+                dy="0.32em"
+                textAnchor="end"
+                className="fill-faint text-[11px]"
+              >
                 {inrCompact(t)}
               </text>
             </g>
@@ -160,7 +203,12 @@ export function TrendChart({
               <text
                 x={x(last)}
                 // Below the point normally; above it when the point sits near the axis (early in the day).
-                y={y(points[last].total_paise) + (y(points[last].total_paise) > pad.top + innerH - 26 ? -12 : 20)}
+                y={
+                  y(points[last].total_paise) +
+                  (y(points[last].total_paise) > pad.top + innerH - 26
+                    ? -12
+                    : 20)
+                }
                 textAnchor="end"
                 className="fill-muted text-[11px]"
               >
@@ -174,15 +222,27 @@ export function TrendChart({
                 key={p.bucket}
                 x={x(i)}
                 y={height - 8}
-                textAnchor={i === 0 && !short ? "start" : i === last && !short ? "end" : "middle"}
+                textAnchor={
+                  i === 0 && !short
+                    ? "start"
+                    : i === last && !short
+                      ? "end"
+                      : "middle"
+                }
                 className="fill-muted text-[12px]"
               >
-                {bucketLabel(p.bucket, grain, short)}
+                {bucketLabel(p.label_bucket ?? p.bucket, grain, short)}
               </text>
             ) : null,
           )}
           {shown !== null ? (
-            <line x1={x(shown)} x2={x(shown)} y1={pad.top} y2={pad.top + innerH} stroke="rgba(234,240,255,0.35)" />
+            <line
+              x1={x(shown)}
+              x2={x(shown)}
+              y1={pad.top}
+              y2={pad.top + innerH}
+              stroke="rgba(234,240,255,0.35)"
+            />
           ) : null}
           <circle
             cx={x(shown ?? last)}
@@ -202,25 +262,36 @@ export function TrendChart({
             transform: "translateY(-6px)",
           }}
         >
-          <p className="text-muted">{bucketLabel(points[shown].bucket, grain, false)}</p>
-          <p className="num font-semibold text-text">{inr(points[shown].total_paise)}</p>
           <p className="text-muted">
-            {points[shown].txn_count} payment{points[shown].txn_count === 1 ? "" : "s"}
+            {bucketLabel(
+              points[shown].label_bucket ?? points[shown].bucket,
+              grain,
+              false,
+            )}
+          </p>
+          <p className="num font-semibold text-text">
+            {inr(points[shown].total_paise)}
+          </p>
+          <p className="text-muted">
+            {points[shown].txn_count} payment
+            {points[shown].txn_count === 1 ? "" : "s"}
           </p>
         </div>
       ) : null}
       <div className="sr-only">
         <table>
-        <caption>Collections by {grain}</caption>
-        <tbody>
-          {points.map((p) => (
-            <tr key={p.bucket}>
-              <th scope="row">{bucketLabel(p.bucket, grain, false)}</th>
-              <td>{inr(p.total_paise)}</td>
-              <td>{p.txn_count} payments</td>
-            </tr>
-          ))}
-        </tbody>
+          <caption>Collections by {grain}</caption>
+          <tbody>
+            {points.map((p) => (
+              <tr key={p.bucket}>
+                <th scope="row">
+                  {bucketLabel(p.label_bucket ?? p.bucket, grain, false)}
+                </th>
+                <td>{inr(p.total_paise)}</td>
+                <td>{p.txn_count} payments</td>
+              </tr>
+            ))}
+          </tbody>
         </table>
       </div>
     </div>
@@ -239,19 +310,33 @@ export function PeakHoursHeatmap({ cells }: { cells: HeatCell[] }) {
 
   return (
     <div className="relative">
-      <div className="grid gap-[2px]" style={{ gridTemplateColumns: `2.6rem repeat(${HOURS.length}, minmax(0, 1fr))` }}>
+      <div
+        className="grid gap-[2px]"
+        style={{
+          gridTemplateColumns: `2.6rem repeat(${HOURS.length}, minmax(0, 1fr))`,
+        }}
+      >
         {DOW.map((d, di) => (
           <div key={d} className="contents">
-            <div className="pr-2 text-right text-xs leading-[22px] text-muted">{d}</div>
+            <div className="pr-2 text-right text-xs leading-[22px] text-muted">
+              {d}
+            </div>
             {HOURS.map((h) => {
-              const cell = byKey.get(`${di + 1}-${h}`) ?? { dow: di + 1, hour: h, total_paise: 0, txn_count: 0 };
+              const cell = byKey.get(`${di + 1}-${h}`) ?? {
+                dow: di + 1,
+                hour: h,
+                total_paise: 0,
+                txn_count: 0,
+              };
               return (
                 <div
                   key={h}
                   onPointerEnter={() => setHover(cell)}
                   onPointerLeave={() => setHover(null)}
                   className="h-[22px] rounded-[4px]"
-                  style={{ background: `rgba(143,180,255,${alpha(cell.total_paise)})` }}
+                  style={{
+                    background: `rgba(143,180,255,${alpha(cell.total_paise)})`,
+                  }}
                 />
               );
             })}
@@ -273,31 +358,41 @@ export function PeakHoursHeatmap({ cells }: { cells: HeatCell[] }) {
         <span className="flex shrink-0 items-center gap-1">
           Less
           {[0.1, 0.3, 0.55, 0.8, 1].map((a) => (
-            <span key={a} className="h-3 w-3 rounded-[3px]" style={{ background: `rgba(143,180,255,${a})` }} />
+            <span
+              key={a}
+              className="h-3 w-3 rounded-[3px]"
+              style={{ background: `rgba(143,180,255,${a})` }}
+            />
           ))}
           More
         </span>
       </div>
       <div className="sr-only">
         <table>
-        <caption>Takings by weekday and hour, last 4 weeks</caption>
-        <tbody>
-          {cells.map((c) => (
-            <tr key={`${c.dow}-${c.hour}`}>
-              <th scope="row">
-                {DOW[c.dow - 1]} {hourLabel(c.hour)}
-              </th>
-              <td>{inr(c.total_paise)}</td>
-            </tr>
-          ))}
-        </tbody>
+          <caption>Takings by weekday and hour, last 4 weeks</caption>
+          <tbody>
+            {cells.map((c) => (
+              <tr key={`${c.dow}-${c.hour}`}>
+                <th scope="row">
+                  {DOW[c.dow - 1]} {hourLabel(c.hour)}
+                </th>
+                <td>{inr(c.total_paise)}</td>
+              </tr>
+            ))}
+          </tbody>
         </table>
       </div>
     </div>
   );
 }
 
-export function MonthlyBars({ months, height = 150 }: { months: { month: string; total_paise: number; txn_count: number }[]; height?: number }) {
+export function MonthlyBars({
+  months,
+  height = 150,
+}: {
+  months: { month: string; total_paise: number; txn_count: number }[];
+  height?: number;
+}) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   const pad = { top: 24, bottom: 26, side: 8 };
@@ -311,8 +406,20 @@ export function MonthlyBars({ months, height = 150 }: { months: { month: string;
   return (
     <div ref={ref} className="relative w-full" style={{ height }}>
       {width > 0 ? (
-        <svg width={width} height={height} role="img" aria-label="Monthly totals, last 6 months" className="block">
-          <line x1={0} x2={width} y1={pad.top + innerH} y2={pad.top + innerH} stroke={GRID} />
+        <svg
+          width={width}
+          height={height}
+          role="img"
+          aria-label="Monthly totals, last 6 months"
+          className="block"
+        >
+          <line
+            x1={0}
+            x2={width}
+            y1={pad.top + innerH}
+            y2={pad.top + innerH}
+            stroke={GRID}
+          />
           {months.map((m, i) => {
             const h = (m.total_paise / max) * innerH;
             const cx = pad.side + band * i + band / 2;
@@ -324,15 +431,41 @@ export function MonthlyBars({ months, height = 150 }: { months: { month: string;
                 ? `M${x0},${pad.top + innerH} V${top + r} Q${x0},${top} ${x0 + r},${top} H${x0 + barW - r} Q${x0 + barW},${top} ${x0 + barW},${top + r} V${pad.top + innerH} Z`
                 : "";
             return (
-              <g key={m.month} onPointerEnter={() => setHover(i)} onPointerLeave={() => setHover(null)}>
-                <rect x={cx - band / 2} y={0} width={band} height={height} fill="transparent" />
-                {path ? <path d={path} fill={SERIES} opacity={hover === null || hover === i ? 1 : 0.45} /> : null}
+              <g
+                key={m.month}
+                onPointerEnter={() => setHover(i)}
+                onPointerLeave={() => setHover(null)}
+              >
+                <rect
+                  x={cx - band / 2}
+                  y={0}
+                  width={band}
+                  height={height}
+                  fill="transparent"
+                />
+                {path ? (
+                  <path
+                    d={path}
+                    fill={SERIES}
+                    opacity={hover === null || hover === i ? 1 : 0.45}
+                  />
+                ) : null}
                 {i === labelIdx && m.total_paise > 0 ? (
-                  <text x={cx} y={top - 7} textAnchor="middle" className="fill-text text-[12px] font-semibold">
+                  <text
+                    x={cx}
+                    y={top - 7}
+                    textAnchor="middle"
+                    className="fill-text text-[12px] font-semibold"
+                  >
                     {inrCompact(m.total_paise)}
                   </text>
                 ) : null}
-                <text x={cx} y={height - 6} textAnchor="middle" className="fill-muted text-[12px]">
+                <text
+                  x={cx}
+                  y={height - 6}
+                  textAnchor="middle"
+                  className="fill-muted text-[12px]"
+                >
                   {dateOnly(`${m.month}-01`, { month: "short" })}
                 </text>
               </g>
@@ -342,16 +475,16 @@ export function MonthlyBars({ months, height = 150 }: { months: { month: string;
       ) : null}
       <div className="sr-only">
         <table>
-        <caption>Monthly totals</caption>
-        <tbody>
-          {months.map((m) => (
-            <tr key={m.month}>
-              <th scope="row">{m.month}</th>
-              <td>{inr(m.total_paise)}</td>
-              <td>{m.txn_count} payments</td>
-            </tr>
-          ))}
-        </tbody>
+          <caption>Monthly totals</caption>
+          <tbody>
+            {months.map((m) => (
+              <tr key={m.month}>
+                <th scope="row">{m.month}</th>
+                <td>{inr(m.total_paise)}</td>
+                <td>{m.txn_count} payments</td>
+              </tr>
+            ))}
+          </tbody>
         </table>
       </div>
     </div>

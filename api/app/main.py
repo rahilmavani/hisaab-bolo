@@ -8,7 +8,8 @@ from fastapi.responses import JSONResponse
 
 from .config import get_settings
 from .db import close_pool, open_pool
-from .routers import invoices, jobs, ledger, mock_pay, recurring, webhooks
+from .routers import agent, invoices, jobs, ledger, mock_pay, recurring, webhooks
+from .services.agent.runner import warm_up
 from .services.jobs import scheduler_loop
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -18,7 +19,7 @@ log = logging.getLogger("hisaab")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await open_pool()
-    tasks = []
+    tasks = [asyncio.create_task(warm_up())]
     if get_settings().run_scheduler:
         tasks.append(asyncio.create_task(scheduler_loop()))
     yield
@@ -47,7 +48,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-for r in (ledger, invoices, recurring, webhooks, mock_pay, jobs):
+for r in (ledger, invoices, recurring, webhooks, mock_pay, jobs, agent):
     app.include_router(r.router)
 
 
