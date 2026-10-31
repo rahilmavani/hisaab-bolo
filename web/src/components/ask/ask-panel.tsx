@@ -365,13 +365,13 @@ export function AskPanel({
       role={docked ? undefined : "dialog"}
       aria-modal={!docked && open ? true : undefined}
       className={clsx(
-        "flex-col border-line bg-ink/95 backdrop-blur xl:sticky xl:top-0 xl:flex xl:h-dvh xl:border-l xl:bg-transparent xl:backdrop-blur-none",
+        "flex-col border-line bg-page xl:sticky xl:top-0 xl:flex xl:h-dvh xl:border-l xl:bg-side",
         open ? "fixed inset-0 z-40 flex" : "hidden",
       )}
     >
       <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <MessageCircle size={18} className="text-sky" aria-hidden /> Ask
+        <h2 className="flex items-center gap-2 text-lg font-medium">
+          <MessageCircle size={16} className="text-muted" aria-hidden /> Ask
           Hisaab
         </h2>
         <span className="text-sm text-muted">Hindi · English · Hinglish</span>
@@ -400,7 +400,7 @@ export function AskPanel({
                 <button
                   key={q}
                   onClick={() => askText(q)}
-                  className="rounded-full border border-line-strong px-3.5 py-1.5 text-left text-sm hover:border-sky"
+                  className="rounded-lg border border-line-strong bg-card px-3 py-1.5 text-left text-sm hover:border-blue"
                 >
                   {q}
                 </button>
@@ -444,7 +444,7 @@ export function AskPanel({
               </p>
             ) : t.answer ? (
               <div className="space-y-2.5">
-                <div className="max-w-[95%] rounded-[20px] rounded-bl-md border border-line bg-white/[0.05] px-4 py-3">
+                <div className="max-w-[95%] rounded-[20px] rounded-bl-md border border-line bg-card px-4 py-3">
                   <p className="text-[1rem] leading-relaxed">
                     {t.answer.display}
                   </p>
@@ -452,7 +452,7 @@ export function AskPanel({
                     <button
                       onClick={() => speak(t.id, t.answer!)}
                       disabled={t.audio === "loading" || t.audio === "playing"}
-                      className="mt-2 inline-flex items-center gap-1.5 text-sm text-sky disabled:opacity-70"
+                      className="mt-2 inline-flex items-center gap-1.5 text-sm text-blue disabled:opacity-70"
                     >
                       {t.audio === "loading" ? (
                         <Loader2 size={13} className="animate-spin" />
@@ -482,7 +482,7 @@ export function AskPanel({
                       <button
                         key={f}
                         onClick={() => askText(f)}
-                        className="rounded-full border border-line-strong px-3.5 py-1.5 text-sm hover:border-sky"
+                        className="rounded-lg border border-line-strong bg-card px-3 py-1.5 text-sm hover:border-blue"
                       >
                         {f}
                       </button>
@@ -548,13 +548,13 @@ export function AskPanel({
             onChange={(e) => setText(e.target.value)}
             placeholder="Or type: Ram ne kitna diya?"
             maxLength={500}
-            className="field min-w-0 flex-1 rounded-full py-3"
+            className="field h-12 min-w-0 flex-1"
           />
           <button
             type="submit"
             aria-label="Send question"
             disabled={!text.trim()}
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-line-strong text-text disabled:opacity-40"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-[10px] border border-line-strong bg-card text-text disabled:opacity-40"
           >
             <Send size={18} />
           </button>

@@ -114,7 +114,7 @@ export function NewInvoiceDialog({
                 <span className="font-medium">{payer.display_name}</span>
               </span>
               {presetPayer ? null : (
-                <button type="button" className="text-sm text-sky hover:underline" onClick={() => setPayer(null)}>
+                <button type="button" className="text-sm text-blue hover:underline" onClick={() => setPayer(null)}>
                   Change
                 </button>
               )}
@@ -128,7 +128,7 @@ export function NewInvoiceDialog({
                     <button
                       type="button"
                       onClick={() => pick(p)}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left hover:bg-white/5"
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left hover:bg-raised"
                     >
                       <Avatar name={p.display_name} size={30} />
                       <span className="min-w-0">
@@ -183,7 +183,7 @@ export function NewInvoiceDialog({
           ))}
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 text-sm text-sky hover:underline"
+            className="inline-flex items-center gap-1.5 text-sm text-blue hover:underline"
             onClick={() => setRows([...rows, { name: "", qty: "1", price: "" }])}
           >
             <Plus size={15} /> Add a line

@@ -22,7 +22,8 @@ test.describe("M3 dashboard and ledger", () => {
 
     await expect(page.getByText(/^Busiest: /)).toBeVisible();
     const height = await page.evaluate(() => document.documentElement.scrollHeight);
-    expect(height).toBeLessThan(2400);
+    // 2600, not 2400, since the unslop pass: the main chart grew to 280px and gained a legend and a previous-period line.
+    expect(height).toBeLessThan(2600);
     await shot(page, "m3", "01-dashboard");
     expect(errors).toEqual([]);
   });

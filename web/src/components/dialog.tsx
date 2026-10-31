@@ -34,7 +34,7 @@ export function Dialog({
       onClose={onClose}
       onClick={(e) => e.target === ref.current && onClose()}
       aria-labelledby="dialog-title"
-      className="m-auto w-[calc(100%-2rem)] rounded-[24px] border border-line-strong bg-ink-2 p-0 text-text shadow-2xl backdrop:bg-ink/70 backdrop:backdrop-blur-sm"
+      className="m-auto w-[calc(100%-2rem)] rounded-[20px] border border-line-strong bg-card p-0 text-text shadow-[0_24px_64px_rgb(31_27_22/0.18)] backdrop:bg-text/40"
       style={{ maxWidth: wide ? 640 : 460 }}
     >
       {open ? (

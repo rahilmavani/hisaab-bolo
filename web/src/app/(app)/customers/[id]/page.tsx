@@ -60,7 +60,7 @@ export default function PayerPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <BackLink />
 
-      <section className="glass p-5 sm:p-7" aria-labelledby="payer-name">
+      <section className="panel p-5 sm:p-7" aria-labelledby="payer-name">
         <div className="flex flex-wrap items-start gap-5">
           <Avatar name={p.display_name} size={64} />
           <div className="min-w-[15rem] flex-1">
@@ -72,7 +72,7 @@ export default function PayerPage() {
                 <Badge key={b} label={b} />
               ))}
             </div>
-            <p className="mt-1 text-[1.08rem] text-sky">{p.habit}</p>
+            <p className="mt-1 text-[15px] text-muted">{p.habit}</p>
             <p className="mt-1 flex flex-wrap gap-x-1.5 text-sm break-all text-muted">
               <span>{[p.vpa, p.phone, p.email].filter(Boolean).join(" · ") || "No contact details yet"}</span>
               {p.gstin ? <span className="font-mono whitespace-nowrap">· GSTIN {p.gstin}</span> : null}
@@ -151,7 +151,7 @@ export default function PayerPage() {
                 {p.invoices.map((inv) => (
                   <li key={inv.id} className="flex items-center justify-between gap-3 py-2.5 text-[0.95rem]">
                     <span>
-                      <Link href={`/collections/${inv.id}`} className="font-mono text-sm hover:text-sky">
+                      <Link href={`/collections/${inv.id}`} className="font-mono text-sm hover:text-blue">
                         {inv.number}
                       </Link>
                       <span className="block text-sm text-muted">Due {dateOnly(inv.due_date)}</span>

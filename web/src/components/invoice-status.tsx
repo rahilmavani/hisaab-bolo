@@ -10,9 +10,9 @@ export function invoiceStatusLabel(status: InvoiceStatus, dueInDays: number, gra
   if (late > graceDays || (status === "overdue" && late > 0)) {
     return { text: `Overdue · ${late} day${late === 1 ? "" : "s"}`, tone: "text-amber" };
   }
-  if (late > 0) return { text: `Past due · ${late} day${late === 1 ? "" : "s"}, in grace`, tone: "text-sky" };
-  if (dueInDays === 0) return { text: "Due today", tone: "text-sky" };
-  if (dueInDays === 1) return { text: "Due tomorrow", tone: "text-sky" };
+  if (late > 0) return { text: `Past due · ${late} day${late === 1 ? "" : "s"}, in grace`, tone: "text-text" };
+  if (dueInDays === 0) return { text: "Due today", tone: "text-text" };
+  if (dueInDays === 1) return { text: "Due tomorrow", tone: "text-text" };
   return { text: `Due in ${dueInDays} days`, tone: "text-muted" };
 }
 

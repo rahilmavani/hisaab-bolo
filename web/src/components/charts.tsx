@@ -18,9 +18,12 @@ import {
 } from "@/lib/format";
 import type { HeatCell, TrendPoint } from "@/lib/types";
 
-const SURFACE = "#0c1634";
-const GRID = "rgba(148,170,220,0.12)";
-const SERIES = "#8fb4ff";
+const SURFACE = "#fdfbf7";
+const GRID = "rgba(31,27,22,0.08)";
+const SERIES = "#2a5fd6";
+// The earlier period on the trend chart; the dashboard legend uses it too.
+export const COMPARE = "#c2b8a7";
+const HEAT = "42,95,214";
 
 function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null);
@@ -57,12 +60,17 @@ export function TrendChart({
   grain,
   height = 190,
   partialLast = false,
+  compare,
+  compareLabel = "Previous",
 }: {
   points: TrendPoint[];
   grain: Grain;
   height?: number;
   /** The last bucket is still filling up (today / this week): draw it dashed. */
   partialLast?: boolean;
+  /** The period before, drawn as a quiet line. Aligned from the end, so the latest buckets line up. */
+  compare?: TrendPoint[];
+  compareLabel?: string;
 }) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const [active, setActive] = useState<number | null>(null);
@@ -70,13 +78,21 @@ export function TrendChart({
   const pad = { top: 14, right: 12, bottom: 30, left: 44 };
   const innerW = Math.max(0, width - pad.left - pad.right);
   const innerH = height - pad.top - pad.bottom;
-  const max = niceMax(Math.max(...points.map((p) => p.total_paise), 0));
+  const shift = compare ? points.length - compare.length : 0;
+  const compareAt = (i: number) => compare?.[i - shift];
+  const max = niceMax(
+    Math.max(
+      ...points.map((p) => p.total_paise),
+      ...(compare ?? []).map((p) => p.total_paise),
+      0,
+    ),
+  );
   const x = (i: number) =>
     pad.left +
     (points.length <= 1 ? innerW / 2 : (i / (points.length - 1)) * innerW);
   const y = (v: number) => pad.top + innerH - (v / max) * innerH;
 
-  const { linePath, areaPath } = useMemo(() => {
+  const { linePath, areaPath, comparePath } = useMemo(() => {
     const l = d3line<TrendPoint>()
       .x((_, i) => x(i))
       .y((d) => y(d.total_paise))
@@ -86,21 +102,44 @@ export function TrendChart({
       .y0(pad.top + innerH)
       .y1((d) => y(d.total_paise))
       .curve(curveMonotoneX);
-    return { linePath: l(points) ?? "", areaPath: a(points) ?? "" };
+    // Only the part of the earlier period that falls inside this chart's buckets.
+    const offset = Math.max(0, -shift);
+    const visible = (compare ?? []).slice(offset);
+    const c = d3line<TrendPoint>()
+      .x((_, i) => x(i + offset + shift))
+      .y((d) => y(d.total_paise))
+      .curve(curveMonotoneX);
+    return {
+      linePath: l(points) ?? "",
+      areaPath: a(points) ?? "",
+      comparePath: visible.length > 1 ? (c(visible) ?? "") : "",
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points, width, max, partialLast]);
+  }, [points, compare, width, max, partialLast]);
 
   const ticks = [0, max / 2, max];
   const short = grain === "day" && points.length <= 8;
+  const last = points.length - 1;
+  const labelText = (i: number) =>
+    bucketLabel(points[i].label_bucket ?? points[i].bucket, grain, short);
+  // Axis labels are 12px Plex Mono, about 7.2px a character.
+  const labelW = (i: number) => labelText(i).length * 7.2;
+  const widest = Math.max(0, ...points.map((_, i) => labelW(i)));
   const labelEvery = Math.max(
     1,
-    Math.ceil(points.length / Math.max(2, Math.floor(innerW / 64))),
+    Math.ceil(points.length / Math.max(2, Math.floor(innerW / (widest + 16)))),
   );
-  const last = points.length - 1;
+  // Where a label starts, from its anchor: the first and last hug the edges unless the axis is short.
+  const labelLeft = (i: number) =>
+    i === 0 && !short
+      ? x(i)
+      : i === last && !short
+        ? x(i) - labelW(i)
+        : x(i) - labelW(i) / 2;
   // The last label always shows; drop regular labels that would collide with it.
-  const minGap = short ? 34 : grain === "week" ? 78 : 54;
   const labelled = (i: number) =>
-    i === last || (i % labelEvery === 0 && x(last) - x(i) >= minGap);
+    i === last ||
+    (i % labelEvery === 0 && labelLeft(i) + labelW(i) + 8 <= labelLeft(last));
   const dashFrom = partialLast && points.length > 1 ? x(last - 1) : null;
   const clipId = `${gradId}-clip`;
   const shown = active ?? null;
@@ -134,11 +173,11 @@ export function TrendChart({
             onMove(e.clientX, e.currentTarget.getBoundingClientRect())
           }
           onPointerLeave={() => setActive(null)}
-          className="block touch-pan-y outline-none"
+          className="block touch-pan-y overflow-visible outline-none"
         >
           <defs>
             <linearGradient id={gradId} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor={SERIES} stopOpacity={0.3} />
+              <stop offset="0%" stopColor={SERIES} stopOpacity={0.14} />
               <stop offset="100%" stopColor={SERIES} stopOpacity={0} />
             </linearGradient>
             {dashFrom !== null ? (
@@ -172,12 +211,22 @@ export function TrendChart({
                 y={y(t)}
                 dy="0.32em"
                 textAnchor="end"
-                className="fill-faint text-[11px]"
+                className="fill-faint font-mono text-[11px]"
               >
                 {inrCompact(t)}
               </text>
             </g>
           ))}
+          {comparePath ? (
+            <path
+              d={comparePath}
+              fill="none"
+              stroke={COMPARE}
+              strokeWidth={1.5}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          ) : null}
           <path d={areaPath} fill={`url(#${gradId})`} />
           <path
             d={linePath}
@@ -200,17 +249,17 @@ export function TrendChart({
                 strokeLinecap="round"
                 clipPath={`url(#${clipId}-dash)`}
               />
+              {/* Left of the point at its own height, with a halo, so neither line can run through it. */}
               <text
-                x={x(last)}
-                // Below the point normally; above it when the point sits near the axis (early in the day).
-                y={
-                  y(points[last].total_paise) +
-                  (y(points[last].total_paise) > pad.top + innerH - 26
-                    ? -12
-                    : 20)
-                }
+                x={x(last) - 12}
+                y={y(points[last].total_paise)}
+                dy="0.32em"
                 textAnchor="end"
-                className="fill-muted text-[11px]"
+                stroke={SURFACE}
+                strokeWidth={4}
+                strokeLinejoin="round"
+                paintOrder="stroke"
+                className="fill-muted font-mono text-[11px]"
               >
                 so far
               </text>
@@ -229,9 +278,9 @@ export function TrendChart({
                       ? "end"
                       : "middle"
                 }
-                className="fill-muted text-[12px]"
+                className="fill-muted font-mono text-[12px]"
               >
-                {bucketLabel(p.label_bucket ?? p.bucket, grain, short)}
+                {labelText(i)}
               </text>
             ) : null,
           )}
@@ -241,14 +290,14 @@ export function TrendChart({
               x2={x(shown)}
               y1={pad.top}
               y2={pad.top + innerH}
-              stroke="rgba(234,240,255,0.35)"
+              stroke="rgba(31,27,22,0.22)"
             />
           ) : null}
           <circle
             cx={x(shown ?? last)}
             cy={y(points[shown ?? last].total_paise)}
             r={5}
-            fill="#ffffff"
+            fill={SERIES}
             stroke={SURFACE}
             strokeWidth={2}
           />
@@ -256,7 +305,7 @@ export function TrendChart({
       ) : null}
       {shown !== null && width > 0 ? (
         <div
-          className="pointer-events-none absolute top-0 z-10 rounded-xl border border-line-strong bg-ink-2/95 px-3 py-2 text-sm shadow-lg"
+          className="pointer-events-none absolute top-0 z-10 rounded-[10px] border border-line-strong bg-card px-3 py-2 text-sm shadow-[0_8px_24px_rgb(31_27_22/0.08)]"
           style={{
             left: Math.min(Math.max(x(shown) - 70, 0), width - 150),
             transform: "translateY(-6px)",
@@ -269,13 +318,18 @@ export function TrendChart({
               false,
             )}
           </p>
-          <p className="num font-semibold text-text">
+          <p className="num font-mono font-medium text-text">
             {inr(points[shown].total_paise)}
           </p>
           <p className="text-muted">
             {points[shown].txn_count} payment
             {points[shown].txn_count === 1 ? "" : "s"}
           </p>
+          {compareAt(shown) ? (
+            <p className="num text-faint">
+              {compareLabel}: {inr(compareAt(shown)!.total_paise)}
+            </p>
+          ) : null}
         </div>
       ) : null}
       <div className="sr-only">
@@ -305,20 +359,20 @@ export function PeakHoursHeatmap({ cells }: { cells: HeatCell[] }) {
   const [hover, setHover] = useState<HeatCell | null>(null);
   const byKey = new Map(cells.map((c) => [`${c.dow}-${c.hour}`, c]));
   const max = Math.max(1, ...cells.map((c) => c.total_paise));
-  // One hue, surface -> bright sky; sqrt keeps quiet hours visible.
-  const alpha = (v: number) => (v <= 0 ? 0.04 : 0.1 + 0.9 * Math.sqrt(v / max));
+  // One hue, paper -> full blue, linear so the busiest hours stand out on paper; the floor keeps quiet hours visible.
+  const alpha = (v: number) => (v <= 0 ? 0.04 : 0.08 + 0.92 * (v / max));
 
   return (
     <div className="relative">
       <div
-        className="grid gap-[2px]"
+        className="grid gap-1"
         style={{
-          gridTemplateColumns: `2.6rem repeat(${HOURS.length}, minmax(0, 1fr))`,
+          gridTemplateColumns: `2.5rem repeat(${HOURS.length}, minmax(0, 1fr))`,
         }}
       >
         {DOW.map((d, di) => (
           <div key={d} className="contents">
-            <div className="pr-2 text-right text-xs leading-[22px] text-muted">
+            <div className="pr-2 text-right font-mono text-xs leading-5 text-faint">
               {d}
             </div>
             {HOURS.map((h) => {
@@ -333,9 +387,9 @@ export function PeakHoursHeatmap({ cells }: { cells: HeatCell[] }) {
                   key={h}
                   onPointerEnter={() => setHover(cell)}
                   onPointerLeave={() => setHover(null)}
-                  className="h-[22px] rounded-[4px]"
+                  className="h-5 rounded-[4px]"
                   style={{
-                    background: `rgba(143,180,255,${alpha(cell.total_paise)})`,
+                    background: `rgba(${HEAT},${alpha(cell.total_paise)})`,
                   }}
                 />
               );
@@ -344,12 +398,12 @@ export function PeakHoursHeatmap({ cells }: { cells: HeatCell[] }) {
         ))}
         <div />
         {HOURS.map((h) => (
-          <div key={h} className="pt-1 text-center text-[11px] text-faint">
+          <div key={h} className="pt-1 text-center font-mono text-[11px] whitespace-nowrap text-faint">
             {h % 3 === 0 ? hourLabel(h).replace(" ", "") : ""}
           </div>
         ))}
       </div>
-      <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[13px] text-faint">
         <span aria-live="polite" className="min-h-4">
           {hover
             ? `${DOW[hover.dow - 1]} ${hourLabel(hover.hour)}: ${inr(hover.total_paise)} from ${hover.txn_count} payment${hover.txn_count === 1 ? "" : "s"}`
@@ -357,11 +411,11 @@ export function PeakHoursHeatmap({ cells }: { cells: HeatCell[] }) {
         </span>
         <span className="flex shrink-0 items-center gap-1">
           Less
-          {[0.1, 0.3, 0.55, 0.8, 1].map((a) => (
+          {[0.08, 0.3, 0.55, 0.8, 1].map((a) => (
             <span
               key={a}
               className="h-3 w-3 rounded-[3px]"
-              style={{ background: `rgba(143,180,255,${a})` }}
+              style={{ background: `rgba(${HEAT},${a})` }}
             />
           ))}
           More
@@ -455,7 +509,7 @@ export function MonthlyBars({
                     x={cx}
                     y={top - 7}
                     textAnchor="middle"
-                    className="fill-text text-[12px] font-semibold"
+                    className="fill-text font-mono text-[12px] font-medium"
                   >
                     {inrCompact(m.total_paise)}
                   </text>
@@ -464,7 +518,7 @@ export function MonthlyBars({
                   x={cx}
                   y={height - 6}
                   textAnchor="middle"
-                  className="fill-muted text-[12px]"
+                  className="fill-muted font-mono text-[12px]"
                 >
                   {dateOnly(`${m.month}-01`, { month: "short" })}
                 </text>

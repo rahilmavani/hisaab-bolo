@@ -74,10 +74,10 @@ export function DemoClock({ me }: { me: Me }) {
   return (
     <section
       aria-label="Demo clock"
-      className="rounded-2xl border border-dashed border-line-strong p-3 text-sm"
+      className="rounded-xl border border-dashed border-line-strong p-3 text-sm"
     >
-      <p className="flex items-center gap-1.5 text-muted">
-        <Clock3 size={14} aria-hidden /> Demo clock{" "}
+      <p className="flex items-center gap-2 text-muted">
+        <Clock3 size={16} aria-hidden /> Demo clock{" "}
         {me.clock_overridden ? "(moved)" : ""}
       </p>
       <p className="mt-0.5 font-medium text-text" data-testid="demo-clock-now">
@@ -110,7 +110,7 @@ export function DemoClock({ me }: { me: Me }) {
         ) : null}
       </div>
       {note ? (
-        <p role="status" className="mt-2 text-xs text-sky">
+        <p role="status" className="mt-2 text-xs text-muted">
           {note}
         </p>
       ) : null}

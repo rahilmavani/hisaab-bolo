@@ -78,7 +78,7 @@ export function RecurringCard({
       ) : (
         <div className="space-y-3">
           {suggestion ? (
-            <p className="rounded-2xl border border-sky/25 bg-blue/10 px-3 py-2.5 text-sm">
+            <p className="rounded-2xl border border-blue/25 bg-blue/10 px-3 py-2.5 text-sm">
               {payer.display_name} pays a steady {inr(suggestion.amount_paise)}
               {suggestion.every_days === 1 ? " every day" : suggestion.every_days === 7 ? " every week" : " every month"}.
               {" "}

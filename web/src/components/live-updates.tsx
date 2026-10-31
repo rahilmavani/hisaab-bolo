@@ -176,10 +176,10 @@ export function LiveUpdates({ merchantId }: { merchantId: string }) {
         <div
           key={t.id}
           role="status"
-          className="pointer-events-auto flex items-start gap-3 rounded-2xl border border-mint/30 bg-ink-2/95 px-4 py-3 shadow-xl backdrop-blur"
+          className="pointer-events-auto flex items-start gap-3 rounded-2xl border border-mint/30 bg-card/95 px-4 py-3 shadow-xl backdrop-blur"
         >
           {t.icon === "call" ? (
-            <Phone size={20} className="mt-0.5 text-sky" aria-hidden />
+            <Phone size={20} className="mt-0.5 text-blue" aria-hidden />
           ) : t.icon === "link" ? (
             <MailCheck size={20} className="mt-0.5 text-mint" aria-hidden />
           ) : (

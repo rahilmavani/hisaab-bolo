@@ -20,7 +20,7 @@ function StatCards({
       {data.items.map((s) => (
         <div
           key={s.label}
-          className="rounded-xl border border-line bg-white/[0.03] px-3 py-2"
+          className="rounded-xl border border-line bg-card px-3 py-2"
         >
           <p className="text-xs text-muted">{s.label}</p>
           <p className="num text-lg font-semibold">
@@ -47,7 +47,7 @@ function PayerCard({
   return (
     <Link
       href={`/customers/${data.payer_id}`}
-      className="block rounded-2xl border border-line bg-white/[0.03] p-3 hover:border-line-strong"
+      className="block rounded-2xl border border-line bg-card p-3 hover:border-line-strong"
     >
       <div className="flex items-center gap-3">
         <Avatar name={data.name} size={38} />
@@ -92,7 +92,7 @@ function DataTable({
   const [all, setAll] = useState(false);
   const rows = all ? data.rows : data.rows.slice(0, 6);
   return (
-    <div className="rounded-2xl border border-line bg-white/[0.02] p-3">
+    <div className="rounded-2xl border border-line bg-card p-3">
       <p className="mb-2 text-sm text-muted">
         {data.title}
         {data.total_paise != null ? ` · ${inr(data.total_paise)}` : ""}
@@ -121,7 +121,7 @@ function DataTable({
             <li key={String(r.id ?? i)}>
               <Link
                 href={`/collections/${r.id}`}
-                className="flex items-center justify-between gap-2 py-1.5 hover:text-sky"
+                className="flex items-center justify-between gap-2 py-1.5 hover:text-blue"
               >
                 <span className="min-w-0">
                   <span className="block truncate">{r.customer as string}</span>
@@ -148,7 +148,7 @@ function DataTable({
       </ul>
       {data.rows.length > 6 ? (
         <button
-          className="mt-2 text-sm text-sky hover:underline"
+          className="mt-2 text-sm text-blue hover:underline"
           onClick={() => setAll(!all)}
         >
           {all
@@ -229,8 +229,8 @@ function ConfirmAction({ action }: { action: PendingAction }) {
   if (state === "dismissed")
     return <p className="text-sm text-faint">Cancelled. Nothing was sent.</p>;
   return (
-    <div className="rounded-2xl border border-sky/30 bg-blue/10 p-3">
-      <p className="flex items-center gap-1.5 text-xs text-sky">
+    <div className="rounded-2xl border border-blue/30 bg-blue/10 p-3">
+      <p className="flex items-center gap-1.5 text-xs text-blue">
         <ShieldCheck size={14} aria-hidden /> Needs your OK
       </p>
       <p className="mt-1 font-semibold">{String(s.title)}</p>
@@ -256,7 +256,7 @@ function ConfirmAction({ action }: { action: PendingAction }) {
         >
           <CheckCircle2 size={15} aria-hidden /> {message}
           {link ? (
-            <Link href={link} className="ml-1 text-sky underline">
+            <Link href={link} className="ml-1 text-blue underline">
               Open
             </Link>
           ) : null}
@@ -308,7 +308,7 @@ export function AnswerComponents({
             return (
               <div
                 key={key}
-                className="rounded-2xl border border-line bg-white/[0.02] p-2"
+                className="rounded-2xl border border-line bg-card p-2"
               >
                 <TrendChart
                   points={c.data.points}
@@ -337,7 +337,7 @@ export function AnswerComponents({
                   <button
                     key={ch.payer_id}
                     onClick={() => onPickPayer(ch.payer_id, ch.label)}
-                    className="rounded-full border border-line-strong px-3 py-1.5 text-left text-sm hover:border-sky"
+                    className="rounded-lg border border-line-strong bg-card px-3 py-1.5 text-left text-sm hover:border-blue"
                   >
                     {ch.label}
                     {ch.sub ? (

@@ -162,7 +162,7 @@ export function RecurringDialog({
               role="radio"
               aria-checked={cadence === c}
               onClick={() => pickCadence(c)}
-              className={`rounded-2xl border px-4 py-3 text-left ${cadence === c ? "border-sky bg-blue/15" : "border-line hover:border-line-strong"}`}
+              className={`rounded-2xl border px-4 py-3 text-left ${cadence === c ? "border-blue bg-blue/15" : "border-line hover:border-line-strong"}`}
             >
               <span className="block font-semibold">
                 {c === "weekly" ? "Weekly" : "Monthly"}

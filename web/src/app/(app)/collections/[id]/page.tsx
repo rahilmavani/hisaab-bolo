@@ -27,7 +27,7 @@ function PaperInvoice({ inv }: { inv: InvoiceDetail }) {
     <article
       aria-label={`Invoice ${inv.number}`}
       className={clsx(
-        "relative overflow-hidden rounded-[22px] bg-paper p-6 text-paper-ink shadow-[0_30px_80px_-30px_rgba(47,111,237,0.45)] sm:p-8",
+        "relative overflow-hidden rounded-[20px] border border-line bg-paper p-6 text-paper-ink shadow-[0_8px_24px_rgb(31_27_22/0.06)] sm:p-8",
         paid && "pb-28 sm:pb-28",
       )}
     >
@@ -410,20 +410,22 @@ export default function InvoicePage() {
                   <CallHistoryItem
                     key={r.id}
                     r={r}
-                    emails={inv.reminders.filter((e) => e.sent_during_call === r.id)}
+                    emails={inv.reminders.filter(
+                      (e) => e.sent_during_call === r.id,
+                    )}
                   />
                 ) : r.sent_during_call ? null : (
-                <li key={r.id ?? i}>
-                  <span className="text-text">
-                    {r.kind === "overdue"
-                      ? "Overdue reminder emailed"
-                      : "Invoice emailed"}
-                  </span>{" "}
-                  <span className="text-muted">
-                    {istDate(r.sent_at)}, {istTime(r.sent_at)}
-                    {r.to_email ? ` to ${r.to_email}` : ""}
-                  </span>
-                </li>
+                  <li key={r.id ?? i}>
+                    <span className="text-text">
+                      {r.kind === "overdue"
+                        ? "Overdue reminder emailed"
+                        : "Invoice emailed"}
+                    </span>{" "}
+                    <span className="text-muted">
+                      {istDate(r.sent_at)}, {istTime(r.sent_at)}
+                      {r.to_email ? ` to ${r.to_email}` : ""}
+                    </span>
+                  </li>
                 ),
               )}
               {failure && inv.status !== "paid" ? (
@@ -467,8 +469,8 @@ export default function InvoicePage() {
             {open && confirmCancel ? (
               <div className="mt-4 space-y-2 rounded-xl border border-rose/30 p-3 text-sm">
                 <p>
-                  Cancel {inv.number}? Its payment link stops taking payments and
-                  it won’t count as outstanding.
+                  Cancel {inv.number}? Its payment link stops taking payments
+                  and it won’t count as outstanding.
                 </p>
                 <div className="flex gap-2">
                   <button

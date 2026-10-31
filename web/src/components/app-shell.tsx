@@ -26,14 +26,10 @@ export function useMe() {
 function BrandMark() {
   return (
     <span className="flex items-center gap-2.5">
-      <span
-        aria-hidden
-        className="grid h-9 w-9 place-items-center rounded-xl text-lg font-bold text-white"
-        style={{ background: "linear-gradient(135deg, #8fb4ff, #2f6fed 60%, #1b3f9e)" }}
-      >
+      <span aria-hidden className="grid h-7 w-7 place-items-center rounded-lg bg-blue text-base leading-none font-medium text-white">
         ₹
       </span>
-      <span className="text-lg font-semibold tracking-tight">Hisaab Bolo</span>
+      <span className="text-[17px] leading-none font-medium">Hisaab Bolo</span>
     </span>
   );
 }
@@ -53,20 +49,22 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[232px_minmax(0,1fr)]">
-      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line px-5 py-6 lg:flex">
-        <Link href="/" aria-label="Hisaab Bolo home">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
+      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-side px-4 py-6 lg:flex">
+        <Link href="/" aria-label="Hisaab Bolo home" className="flex h-8 items-center rounded-lg px-2">
           <BrandMark />
         </Link>
-        <nav aria-label="Main" className="mt-10 flex flex-col gap-1">
+        <nav aria-label="Main" className="mt-8 flex flex-col gap-0.5">
           {NAV.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
               aria-current={isActive(href) ? "page" : undefined}
               className={clsx(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.98rem] transition-colors",
-                isActive(href) ? "bg-blue/20 text-text" : "text-muted hover:bg-white/5 hover:text-text",
+                "flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[15px] transition-colors",
+                isActive(href)
+                  ? "bg-card text-text shadow-[inset_0_0_0_1px_var(--color-line)]"
+                  : "text-muted hover:bg-raised hover:text-text",
               )}
             >
               <Icon size={18} aria-hidden />
@@ -76,26 +74,28 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
         <div className="mt-auto space-y-4 text-sm">
           {me?.demo_tools ? <DemoClock me={me} /> : null}
-          {me ? (
-            <div>
-              <p className="font-medium text-text">{me.merchant.name}</p>
-              {!me.demo_tools ? (
-                <p className="text-muted">
-                  {istDayLabel(me.now)}, {istTime(me.now)}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-          <button onClick={signOut} className="flex items-center gap-2 text-muted hover:text-text">
-            <LogOut size={16} aria-hidden /> Sign out
-          </button>
+          <div className="space-y-2 px-2">
+            {me ? (
+              <div>
+                <p className="font-medium text-text">{me.merchant.name}</p>
+                {!me.demo_tools ? (
+                  <p className="text-muted">
+                    {istDayLabel(me.now)}, {istTime(me.now)}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            <button onClick={signOut} className="flex items-center gap-2 text-muted hover:text-text">
+              <LogOut size={16} aria-hidden /> Sign out
+            </button>
+          </div>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-col">
         <header className="flex items-center justify-between gap-3 px-4 pt-4 lg:hidden">
           <BrandMark />
-          <button onClick={signOut} aria-label="Sign out" className="rounded-full p-2 text-muted hover:text-text">
+          <button onClick={signOut} aria-label="Sign out" className="rounded-lg p-2 text-muted hover:bg-raised hover:text-text">
             <LogOut size={18} />
           </button>
         </header>
@@ -116,27 +116,27 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Between the phone tab bar and the docked panel (lg–xl), a floating button opens Ask Hisaab. */}
       <button
         onClick={() => setAskOpen(true)}
-        className="fixed right-6 bottom-6 z-30 hidden items-center gap-2 rounded-full bg-blue px-5 py-3 font-semibold text-white shadow-xl hover:bg-blue-strong lg:flex xl:hidden"
+        className="fixed right-6 bottom-6 z-30 hidden h-12 items-center gap-2 rounded-xl bg-blue px-5 font-medium text-white shadow-[0_8px_24px_rgb(31_27_22/0.14)] transition-colors hover:bg-blue-strong lg:flex xl:hidden"
       >
         <Mic size={18} aria-hidden /> Ask Hisaab
       </button>
 
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-ink/90 backdrop-blur lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-page/95 backdrop-blur lg:hidden"
       >
         {NAV.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}
             aria-current={isActive(href) ? "page" : undefined}
-            className={clsx("flex flex-col items-center gap-0.5 py-2.5 text-xs", isActive(href) ? "text-sky" : "text-muted")}
+            className={clsx("flex flex-col items-center gap-0.5 py-2.5 text-xs", isActive(href) ? "text-blue" : "text-muted")}
           >
             <Icon size={20} aria-hidden />
             {label}
           </Link>
         ))}
-        <button onClick={() => setAskOpen(true)} className="flex flex-col items-center gap-0.5 py-2.5 text-xs text-sky">
+        <button onClick={() => setAskOpen(true)} className="flex flex-col items-center gap-0.5 py-2.5 text-xs text-blue">
           <Mic size={20} aria-hidden />
           Ask
         </button>
