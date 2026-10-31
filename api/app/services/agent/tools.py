@@ -192,6 +192,13 @@ def romanize(text: str) -> str:
     return "".join(out)
 
 
+def to_devanagari(text: str) -> str:
+    """Gujarati, Bengali, Tamil … letters sit at the same place in their Unicode blocks as in Devanagari's,
+    so a fixed shift maps a name onto Devanagari for romanizing (રામ → राम → ram)."""
+    return "".join(chr(ord(ch) - (ord(ch) - 0x0900) // 0x80 * 0x80) if "\u0980" <= ch <= "\u0d7f" else ch
+                   for ch in text)
+
+
 def _has_devanagari(text: str) -> bool:
     return any("\u0900" <= ch <= "\u097f" for ch in text)
 
@@ -221,7 +228,7 @@ def _without_joined_ji(name: str) -> str:
 
 
 async def find_payer(ctx: ToolContext, name: str) -> dict:
-    said = name
+    said = name = to_devanagari(name)
     if _has_devanagari(name):
         name = romanize(name)
     name = _without_honorifics(name)

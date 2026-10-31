@@ -73,6 +73,21 @@ function clock(ms: number) {
 
 // From xl the panel is docked beside the page; below that it opens over the page as a dialog.
 const DOCKED = "(min-width: 1280px)";
+
+/** The agent answers in the language it was asked in (Sarvam hears and speaks all of these). */
+const LANGUAGES: Record<string, string> = {
+  "hi-IN": "Hinglish",
+  "en-IN": "English",
+  "gu-IN": "Gujarati",
+  "mr-IN": "Marathi",
+  "bn-IN": "Bengali",
+  "pa-IN": "Punjabi",
+  "od-IN": "Odia",
+  "ta-IN": "Tamil",
+  "te-IN": "Telugu",
+  "kn-IN": "Kannada",
+  "ml-IN": "Malayalam",
+};
 const subscribeDocked = (cb: () => void) => {
   const mq = window.matchMedia(DOCKED);
   mq.addEventListener("change", cb);
@@ -374,7 +389,7 @@ export function AskPanel({
           <MessageCircle size={16} className="text-muted" aria-hidden /> Ask
           Hisaab
         </h2>
-        <span className="text-sm text-muted">Hindi · English · Hinglish</span>
+        <span className="text-sm text-muted">Hindi · English · Gujarati · more</span>
         <button
           onClick={onClose}
           aria-label="Close Ask Hisaab"
@@ -463,7 +478,7 @@ export function AskPanel({
                         ? "Speaking…"
                         : t.audio === "unavailable"
                           ? "Voice unavailable, tap to retry"
-                          : `Spoken back in ${t.answer.lang === "hi-IN" ? "Hinglish" : "English"}`}
+                          : `Spoken back in ${LANGUAGES[t.answer.lang] ?? "English"}`}
                     </button>
                   ) : null}
                 </div>

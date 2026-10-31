@@ -313,7 +313,7 @@ export type AskResponse = {
   query_id: string;
   display: string;
   speech: string | null;
-  lang: "hi-IN" | "en-IN";
+  lang: string; // "hi-IN", "en-IN", "gu-IN", …: the question's language
   components: AskComponent[];
   follow_ups: string[];
   pending_action: PendingAction | null;

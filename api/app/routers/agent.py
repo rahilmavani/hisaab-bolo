@@ -100,7 +100,8 @@ async def ask_voice(
         except (ValueError, TypeError):
             hist = []
     out = await ask(conn, merchant.id, merchant.name, stt["transcript"], history=hist,
-                    payer_hint=str(payer_hint) if payer_hint else None, source="voice")
+                    payer_hint=str(payer_hint) if payer_hint else None, source="voice",
+                    heard_lang=stt["language_code"])
     return {**out, "transcript": stt["transcript"], "stt_language": stt["language_code"], "stt_ms": stt_ms}
 
 
