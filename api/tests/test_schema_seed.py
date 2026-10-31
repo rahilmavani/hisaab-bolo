@@ -41,6 +41,7 @@ def test_money_columns_are_integer_paise(db):
 
 
 def test_app_clock_jump_and_reset(db, restore_clock):
+    db.execute("update app_clock set override_now = null, set_at = null where id = 1")
     real = db.execute("select now() as now, app_now() as app").fetchone()
     assert abs((real["app"] - real["now"]).total_seconds()) < 1
     db.execute(

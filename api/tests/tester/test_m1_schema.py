@@ -296,9 +296,17 @@ def test_app_clock_is_singleton(tx):
 
 
 def test_app_now_is_real_now_by_default(db):
-    r = db.execute("select override_now, now() as now, app_now() as app from app_clock where id = 1").fetchone()
-    assert r["override_now"] is None, "demo clock left jumped"
-    assert abs((r["app"] - r["now"]).total_seconds()) < 1
+    """After a seed the clock is real time, or pinned to 12:30 today when seeded before 10:00 IST."""
+    from app.seed import demo_instant
+
+    r = db.execute("select override_now, set_at, now() as now, app_now() as app from app_clock where id = 1").fetchone()
+    expected, pinned = demo_instant(r["now"])
+    if pinned:
+        assert r["override_now"] == expected, "demo clock left jumped"
+        assert abs((r["app"] - (r["override_now"] + (r["now"] - r["set_at"]))).total_seconds()) < 1
+    else:
+        assert r["override_now"] is None, "demo clock left jumped"
+        assert abs((r["app"] - r["now"]).total_seconds()) < 1
 
 
 def test_app_now_follows_override_now_alone(tx):

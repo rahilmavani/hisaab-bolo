@@ -41,7 +41,11 @@ def test_reseed_keeps_one_user_and_one_merchant(db, settings):
 def test_reseed_resets_a_jumped_clock(db):
     db.execute("update app_clock set override_now = now() + interval '9 days', set_at = now() where id = 1")
     seed(verbose=False)
-    assert db.execute("select override_now from app_clock where id = 1").fetchone()["override_now"] is None
+    from app.seed import demo_instant
+
+    row = db.execute("select override_now, now() as now from app_clock where id = 1").fetchone()
+    expected, pinned = demo_instant(row["now"])
+    assert row["override_now"] == (expected if pinned else None)  # the 9-day jump is gone
 
 
 def test_seed_is_deterministic_for_a_given_instant(db, settings):

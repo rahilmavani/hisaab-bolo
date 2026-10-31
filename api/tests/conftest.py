@@ -42,9 +42,12 @@ def db(settings):
 
 @pytest.fixture
 def restore_clock(settings):
+    """Put the demo clock back where it was (the seed may have pinned it)."""
+    with psycopg.connect(settings.database_url, autocommit=True) as conn:
+        before = conn.execute("select override_now, set_at from app_clock where id = 1").fetchone()
     yield
     with psycopg.connect(settings.database_url, autocommit=True) as conn:
-        conn.execute("update app_clock set override_now = null, set_at = null where id = 1")
+        conn.execute("update app_clock set override_now = %s, set_at = %s where id = 1", before)
 
 
 def sign_in(settings, email: str, password: str) -> str:

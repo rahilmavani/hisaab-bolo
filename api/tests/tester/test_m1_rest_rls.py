@@ -122,7 +122,7 @@ def test_owner_reads_views_through_rls(settings, demo_token, demo_mid):
     heat = _get(settings, "hourly_heatmap?select=merchant_id,hour", demo_token).json()
     assert heat and {h["merchant_id"] for h in heat} == {demo_mid}
     clock = _get(settings, "app_clock?select=id,override_now", demo_token).json()
-    assert clock == [{"id": 1, "override_now": None}]
+    assert len(clock) == 1 and clock[0]["id"] == 1  # override_now: null, or 12:30 when seeded before 10:00 IST
 
 
 # ---------------------------------------------------------------------------
@@ -191,12 +191,14 @@ def test_owner_cannot_write_through_rest(settings, demo_token, demo_mid):
 
 
 def test_owner_cannot_jump_the_demo_clock(settings, demo_token):
+    with psycopg.connect(settings.database_url) as c:
+        before = c.execute("select override_now from app_clock where id = 1").fetchone()[0]
     h = _headers(settings, demo_token, Prefer="return=representation")
     r = httpx.patch(f"{settings.supabase_url}/rest/v1/app_clock?id=eq.1", headers=h,
                     json={"override_now": "2030-01-01T00:00:00Z", "set_at": "2026-01-01T00:00:00Z"}, timeout=20)
     assert r.status_code in (401, 403) or r.json() == [], r.status_code
     with psycopg.connect(settings.database_url) as c:
-        assert c.execute("select override_now from app_clock where id = 1").fetchone()[0] is None
+        assert c.execute("select override_now from app_clock where id = 1").fetchone()[0] == before
 
 
 def test_clients_cannot_mint_invoice_numbers(settings, demo_token, demo_mid):

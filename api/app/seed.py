@@ -452,14 +452,31 @@ def ensure_demo_user(conn: psycopg.Connection, s) -> uuid.UUID:
     return uuid.UUID(r.json()["id"])
 
 
+DEMO_PIN_BEFORE_HOUR = 10  # before this, today has too little trade to tell the story
+DEMO_PIN_TIME = time(12, 30)
+
+
+def demo_instant(real_now: datetime) -> tuple[datetime, bool]:
+    """Seeding in the small hours pins the demo clock to 12:30 today, so the story (a slow
+    day, today's newcomers, Ram's 8:30 payment) always reads like a business day."""
+    local = real_now.astimezone(IST)
+    if local.hour < DEMO_PIN_BEFORE_HOUR:
+        return datetime.combine(local.date(), DEMO_PIN_TIME, tzinfo=IST), True
+    return local, False
+
+
 def seed(now: datetime | None = None, verbose: bool = True) -> dict:
     s = get_settings()
     with psycopg.connect(s.database_url, autocommit=False) as conn:
         user_id = ensure_demo_user(conn, s)
-        conn.execute("update app_clock set override_now = null, set_at = null where id = 1")
+        pinned = False
         if now is None:
-            now = conn.execute("select now()").fetchone()[0]
+            now, pinned = demo_instant(conn.execute("select now()").fetchone()[0])
         now = now.astimezone(IST)
+        if pinned:
+            conn.execute("update app_clock set override_now = %s, set_at = now() where id = 1", (now,))
+        else:
+            conn.execute("update app_clock set override_now = null, set_at = null where id = 1")
         today = now.date()
 
         conn.execute("delete from merchants where owner_user_id = %s", (user_id,))
@@ -522,6 +539,7 @@ def seed(now: datetime | None = None, verbose: bool = True) -> dict:
         "transactions": len(txns),
         "invoices": len(invoices),
         "today": today.isoformat(),
+        "clock_pinned_to": now.isoformat() if pinned else None,
         "ram_payments": sum(1 for t in txns if t.payer and t.payer.name == "Ram"),
     }
     if verbose:
